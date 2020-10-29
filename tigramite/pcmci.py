@@ -3777,8 +3777,8 @@ if __name__ == '__main__':
     cond_ind_test = ParCorr()
     print("Starting PCMCI")
     start = time.perf_counter_ns()
-    # pcmci = PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
-    # results = pcmci.run_pcmciplus(tau_min=0, tau_max=15, pc_alpha=0.01)
+    pcmci = PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
+    results = pcmci.run_pcmciplus(tau_min=0, tau_max=15, pc_alpha=0.01)
     end = time.perf_counter_ns()
     totalTime = (end - start) / 1e9
     print(f"Ending PCMCI... {totalTime} seconds")
