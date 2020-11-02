@@ -23,7 +23,7 @@ class Benchmark:
         correctShape = []
         for shape in shapes:
             subdata = self.__data[:shape[0], :shape[1]]
-            correctShape.append(subdata.shape)
+            correctShape.append(str(subdata.shape))
             start = time.perf_counter_ns()
             self.runPCMCI(subdata, tau_max)
             end = time.perf_counter_ns()
