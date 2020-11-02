@@ -27,7 +27,7 @@ class Benchmark:
             start = time.perf_counter_ns()
             self.runPCMCI(subdata, tau_max)
             end = time.perf_counter_ns()
-            self.__times.append((start - end) / 1e9)
+            self.__times.append((end - start) / 1e9)
             self.saveTimes("shapes.txt", correctShape)
             shapesDone += 1
             print(f"Shapes done: {shapesDone} / {total}")
@@ -62,10 +62,10 @@ class Benchmark:
 
 
 if __name__ == '__main__':
-    shapes = [(10, 10), (100, 10), (None, 10), (10, 50), (100, 500), (None, 50), (10, 100), (100, 100), (None, 100),
-              (10, 250), (100, 250), (1000, 250)]
+    shapes = [(10, 10), (100, 10), (None, 10), (10, 20), (100, 20), (None, 20), (10, 40), (100, 40), (None, 40),
+              (10, 60), (100, 60), (1000, 60)]
     taus = [2, 3, 4, 5, 8, 10, 12, 15, 20, 25, 30, 50]
-    datashape = (400, 100)
+    datashape = (400, 20)
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
