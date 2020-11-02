@@ -66,7 +66,7 @@ if __name__ == '__main__':
     taus = [2, 3, 4, 5, 8, 10]
     datashape = (400, 10)
 
-    path = os.path.join(os.getcwd(), "data", "timeSeries_ax1.npy")
+    path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
 
     b = Benchmark(data)
