@@ -54,10 +54,10 @@ class Benchmark:
         pcmci = PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
         results = pcmci.run_pcmciplus(tau_min=0, tau_max=tau_max, pc_alpha=0.01)
 
-    def saveTimes(self, fname: str, columns: list):
+    def saveTimes(self, fname: str, lines: list):
         if not fname.endswith(".txt"):
             fname += ".txt"
-        df = pd.DataFrame(self.__times, columns=columns)
+        df = pd.DataFrame(self.__times, index=lines)
         df.to_csv(fname)
 
 
