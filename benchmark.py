@@ -62,9 +62,10 @@ class Benchmark:
 
 
 if __name__ == '__main__':
-    shapes = [(10, 10), (100, 10), (None, 10), (10, 20), (100, 20), (None, 20)]
-    taus = [2, 3, 4, 5, 8, 10]
-    datashape = (400, 10)
+    shapes = [(10, 10), (100, 10), (None, 10), (10, 50), (100, 500), (None, 50), (10, 100), (100, 100), (None, 100),
+              (10, 250), (100, 250), (1000, 250)]
+    taus = [2, 3, 4, 5, 8, 10, 12, 15, 20, 25, 30, 50]
+    datashape = (400, 100)
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
