@@ -1,5 +1,5 @@
-import tigramite as tg
-import run_pcmci_parallel
+from tigramite.pcmci import PCMCI
+# import run_pcmci_parallel
 import time
 import os
 import numpy as np
@@ -51,7 +51,7 @@ class Benchmark:
     def runPCMCI(self, data: np.ndarray, tau_max: int):
         dataframe = pp.DataFrame(data)
         cond_ind_test = ParCorr()
-        pcmci = tg.pcmci.PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
+        pcmci = PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
         results = pcmci.run_pcmciplus(tau_min=0, tau_max=tau_max, pc_alpha=0.01)
 
     def saveTimes(self, fname: str, columns: list):
