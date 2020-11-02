@@ -42,7 +42,7 @@ class Benchmark:
             start = time.perf_counter_ns()
             self.runPCMCI(subdata, tau)
             end = time.perf_counter_ns()
-            self.__times.append((start - end) / 1e9)
+            self.__times.append((end - start) / 1e9)
             tausDoneList.append(tau)
             self.saveTimes("tauMax.txt", tausDoneList)
             tauDone += 1
