@@ -1,4 +1,4 @@
-import tigramtite as tg
+import tigramite as tg
 import run_pcmci_parallel
 import time
 import os
