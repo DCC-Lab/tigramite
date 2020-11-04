@@ -8,6 +8,7 @@ from tigramite.independence_tests import ParCorr, CMIknn
 import tigramite.data_processing as pp
 import tigramite.plotting as tp
 import pandas as pd
+import warnings as warn
 
 
 class Benchmark:
@@ -19,6 +20,41 @@ class Benchmark:
         self.__columns = None
         self.__tausLines = None
         self.__shapesLines = None
+
+    def __noBenchmarkDoneWarning(self):
+        warn.warn("No benchmark done. Please run with `start` method.")
+
+    @property
+    def data(self):
+        return self.__data.copy()
+
+    @property
+    def tauTimes(self):
+        if self.__tauTimes is None:
+            self.__noBenchmarkDoneWarning()
+            return None
+        return self.__tauTimes.copy()
+
+    @property
+    def shapeTimes(self):
+        if self.__shapeTimes is None:
+            self.__noBenchmarkDoneWarning()
+            return None
+        return self.__shapeTimes.copy()
+
+    @property
+    def nbRuns(self):
+        if self.__columns is None:
+            self.__noBenchmarkDoneWarning()
+            return None
+        return len(self.__columns)
+
+    @property
+    def shapesUsed(self):
+        if self.__shapesLines is None:
+            self.__noBenchmarkDoneWarning()
+            return None
+        return self.__shapesLines
 
     def __shapeImpact(self, shapes: list, currentRunTimes: np.ndarray, tau_max: int = 3):
         total = len(shapes)
@@ -65,8 +101,6 @@ class Benchmark:
             self.__shapeImpact(shapes, self.__shapeTimes[:, i], tau_max)
             self.__tau_maxImpact(taus, dataShape, self.__tauTimes[:, i])
             print(f"{'=' * 5} Ending {col} {'=' * 5}")
-            if col == "Run 2":
-                exit()
 
     def __saveTauTimes(self):
         fname = "tauMax.txt"
@@ -77,6 +111,12 @@ class Benchmark:
         fname = "shapes.txt"
         df = pd.DataFrame(self.__shapeTimes, index=self.__shapesLines, columns=self.__columns)
         df.to_csv(fname)
+
+
+class BenchmarkStats:
+
+    def __init__(self):
+        pass
 
 
 if __name__ == '__main__':
