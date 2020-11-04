@@ -14,39 +14,39 @@ class Benchmark:
 
     def __init__(self, data: np.ndarray):
         self.__data = data
-        self.__times = []
+        self.__tauTimes = None
+        self.__shapeTimes = None
+        self.__columns = None
+        self.__tausLines = None
+        self.__shapesLines = None
 
-    def shapeImpact(self, shapes: list, tau_max: int = 3):
-        self.__times.clear()
+    def __shapeImpact(self, shapes: list, currentRunTimes: np.ndarray, tau_max: int = 3):
         total = len(shapes)
-        shapesDone = 1
-        correctShape = []
+        shapesDone = 0
+        self.__shapesLines = shapes
         for shape in shapes:
             subdata = self.__data[:shape[0], :shape[1]]
-            correctShape.append(str(subdata.shape))
             start = time.perf_counter_ns()
             self.runPCMCI(subdata, tau_max)
             end = time.perf_counter_ns()
-            self.__times.append((end - start) / 1e9)
-            self.saveTimes("shapes.txt", correctShape)
+            currentRunTimes[shapesDone] = (end - start) / 1e9
             shapesDone += 1
             print(f"Shapes done: {shapesDone} / {total}")
+            self.__saveShapeTimes()
 
-    def tau_maxImpact(self, tau_max_s: list, dataShape: tuple):
-        self.__times.clear()
+    def __tau_maxImpact(self, tau_max_s: list, dataShape: tuple, currentRunTaus: np.ndarray):
         subdata = self.__data[:dataShape[0], :dataShape[1]]
         total = len(tau_max_s)
-        tauDone = 1
-        tausDoneList = []
+        tauDone = 0
+        self.__tausLines = tau_max_s
         for tau in tau_max_s:
             start = time.perf_counter_ns()
             self.runPCMCI(subdata, tau)
             end = time.perf_counter_ns()
-            self.__times.append((end - start) / 1e9)
-            tausDoneList.append(tau)
-            self.saveTimes("tauMax.txt", tausDoneList)
+            currentRunTaus[tauDone] = (end - start) / 1e9
             tauDone += 1
-            print(f"Tau done: {tauDone} / {total}")
+            print(f"Taus done: {tauDone} / {total}")
+            self.__saveTauTimes()
 
     def runPCMCI(self, data: np.ndarray, tau_max: int):
         dataframe = pp.DataFrame(data)
@@ -54,22 +54,39 @@ class Benchmark:
         pcmci = PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
         results = pcmci.run_pcmciplus(tau_min=0, tau_max=tau_max, pc_alpha=0.01)
 
-    def saveTimes(self, fname: str, lines: list):
-        if not fname.endswith(".txt"):
-            fname += ".txt"
-        df = pd.DataFrame(self.__times, index=lines)
+    def start(self, nbRuns: int, shapes: list, taus: list, dataShape: tuple = (400, 20), tau_max: int = 3):
+        self.__columns = [f"Run {i + 1}" for i in range(nbRuns)]
+        nbTaus = len(taus)
+        nbShapes = len(shapes)
+        self.__tauTimes = np.zeros((nbTaus, nbRuns), dtype=float)
+        self.__shapeTimes = np.zeros((nbShapes, nbRuns), dtype=float)
+        for i, col in enumerate(self.__columns):
+            print(f"{'=' * 5} Starting {col} {'=' * 5}")
+            self.__shapeImpact(shapes, self.__shapeTimes[:, i], tau_max)
+            self.__tau_maxImpact(taus, dataShape, self.__tauTimes[:, i])
+            print(f"{'=' * 5} Ending {col} {'=' * 5}")
+            if col == "Run 2":
+                exit()
+
+    def __saveTauTimes(self):
+        fname = "tauMax.txt"
+        df = pd.DataFrame(self.__tauTimes, index=self.__tausLines, columns=self.__columns)
+        df.to_csv(fname)
+
+    def __saveShapeTimes(self):
+        fname = "shapes.txt"
+        df = pd.DataFrame(self.__shapeTimes, index=self.__shapesLines, columns=self.__columns)
         df.to_csv(fname)
 
 
 if __name__ == '__main__':
-    shapes = [(10, 10), (100, 10), (None, 10), (10, 20), (100, 20), (None, 20), (10, 40), (100, 40), (None, 40),
-              (10, 60), (100, 60), (1000, 60)]
-    taus = [2, 3, 4, 5, 8, 10, 12, 15, 20, 25, 30, 50]
+    shapes = [(10, 10), (100, 10), (440, 10), (10, 15), (100, 15), (440, 15), (10, 20), (100, 20), (440, 20),
+              (10, 25), (100, 25), (440, 25), (10, 30), (100, 30), (440, 30)]
+    taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30]
     datashape = (400, 20)
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
 
     b = Benchmark(data)
-    b.shapeImpact(shapes)
-    b.tau_maxImpact(taus, datashape)
+    b.start(3, shapes, taus, datashape)
