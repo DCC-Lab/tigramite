@@ -121,12 +121,13 @@ class BenchmarkStats:
 
 if __name__ == '__main__':
     shapes = [(10, 10), (100, 10), (440, 10), (10, 15), (100, 15), (440, 15), (10, 20), (100, 20), (440, 20),
-              (10, 25), (100, 25), (440, 25), (10, 30), (100, 30), (440, 30)]
-    taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30]
+              (10, 25), (100, 25), (440, 25), (10, 30), (100, 30), (440, 30), (10, 40), (100, 40), (440, 40), (10, 50),
+              (100, 50), (440, 50)]
+    taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 100, 150, 200]
     datashape = (400, 20)
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
 
     b = Benchmark(data)
-    b.start(3, shapes, taus, datashape)
+    b.start(6, shapes, taus, datashape)
