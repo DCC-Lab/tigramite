@@ -1,5 +1,5 @@
 from tigramite.pcmci import PCMCI
-# import run_pcmci_parallel
+import run_pcmci_parallel_v2
 import time
 import os
 import numpy as np
@@ -13,8 +13,9 @@ import warnings as warn
 
 class Benchmark:
 
-    def __init__(self, data: np.ndarray):
+    def __init__(self, data: np.ndarray, parallel: bool = False):
         self.__data = data
+        self.__parallel = parallel
         self.__tauTimes = None
         self.__shapeTimes = None
         self.__columns = None
@@ -57,13 +58,16 @@ class Benchmark:
         return self.__shapesLines
 
     def __shapeImpact(self, shapes: list, currentRunTimes: np.ndarray, tau_max: int = 3):
+        method = self.runPCMCI
+        if self.__parallel:
+            method = self.runPCMCI_par
         total = len(shapes)
         shapesDone = 0
         self.__shapesLines = shapes
         for shape in shapes:
             subdata = self.__data[:shape[0], :shape[1]]
             start = time.perf_counter_ns()
-            self.runPCMCI(subdata, tau_max)
+            method(subdata, tau_max)
             end = time.perf_counter_ns()
             currentRunTimes[shapesDone] = (end - start) / 1e9
             shapesDone += 1
@@ -71,13 +75,16 @@ class Benchmark:
             self.__saveShapeTimes()
 
     def __tau_maxImpact(self, tau_max_s: list, dataShape: tuple, currentRunTaus: np.ndarray):
+        method = self.runPCMCI
+        if self.__parallel:
+            method = self.runPCMCI_par
         subdata = self.__data[:dataShape[0], :dataShape[1]]
         total = len(tau_max_s)
         tauDone = 0
         self.__tausLines = tau_max_s
         for tau in tau_max_s:
             start = time.perf_counter_ns()
-            self.runPCMCI(subdata, tau)
+            method(subdata, tau)
             end = time.perf_counter_ns()
             currentRunTaus[tauDone] = (end - start) / 1e9
             tauDone += 1
@@ -89,6 +96,12 @@ class Benchmark:
         cond_ind_test = ParCorr()
         pcmci = PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
         results = pcmci.run_pcmciplus(tau_min=0, tau_max=tau_max, pc_alpha=0.01)
+
+    def runPCMCI_par(self, data: np.ndarray, tau_max: int):
+        dataframe = pp.DataFrame(data)
+        cond_ind_test = ParCorr()
+        pcmci = run_pcmci_parallel_v2.PCMCI_Parallel(data, tau_max, 0.01)
+        results = pcmci.start()
 
     def start(self, nbRuns: int, shapes: list, taus: list, dataShape: tuple = (400, 20), tau_max: int = 3):
         self.__columns = [f"Run {i + 1}" for i in range(nbRuns)]
@@ -104,11 +117,15 @@ class Benchmark:
 
     def __saveTauTimes(self):
         fname = "tauMax.txt"
+        if self.__parallel:
+            fname = "tauMax_par.txt"
         df = pd.DataFrame(self.__tauTimes, index=self.__tausLines, columns=self.__columns)
         df.to_csv(fname)
 
     def __saveShapeTimes(self):
         fname = "shapes.txt"
+        if self.__parallel:
+            fname = "shapes_par.txt"
         df = pd.DataFrame(self.__shapeTimes, index=self.__shapesLines, columns=self.__columns)
         df.to_csv(fname)
 
