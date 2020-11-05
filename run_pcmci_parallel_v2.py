@@ -22,15 +22,16 @@ class PCMCI_Parallel:
 
     @staticmethod
     def split(container, count):
+        container = tuple(container)
         return [container[i::count] for i in range(count)]
 
-    def __run_pc_stable_parallel_singleVariable(self, variable):
-        pcmci_var = PCMCI(dataframe=self.__data, cond_ind_test=self.__cond_ind_test, selected_variables=[variable])
-        parents_of_var = pcmci_var.run_pc_stable(tau_max=self.__tau_max, pc_alpha=self.__pc_alpha)
+    def run_pc_stable_parallel_singleVariable(self, variable):
+        pcmci_var = PCMCI(dataframe=self.__data, cond_ind_test=self.__cond_ind_test)
+        parents_of_var = pcmci_var.run_pc_stable_singleVar(variable, None, 1, self.__tau_max, pc_alpha=self.__pc_alpha)
         return pcmci_var, parents_of_var
 
-    def __run_PCMCI_parallel(self, variable):
-        pcmci_var, parents_of_var = self.__run_pc_stable_parallel_singleVariable(variable)
+    def run_PCMCI_parallel(self, variable):
+        pcmci_var, parents_of_var = self.run_pc_stable_parallel_singleVariable(variable)
         results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max)
         return variable, pcmci_var, parents_of_var, results_in_var
 
@@ -41,8 +42,9 @@ class PCMCI_Parallel:
             nbWorkers = mp.cpu_count()
 
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
+        splittedJobs = range(self.__nbVar)
 
         with mp.Pool(nbWorkers) as pool:
-            output = pool.map(self.__run_PCMCI_parallel, splittedJobs)
+            output = pool.map(self.run_PCMCI_parallel, splittedJobs)
 
         return output
