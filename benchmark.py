@@ -13,7 +13,7 @@ import warnings as warn
 
 class Benchmark:
 
-    def __init__(self, data: np.ndarray, parallel: bool = False):
+    def __init__(self, data: np.ndarray, parallel: bool = False, savefileNames: tuple = ("shapes.txt", "tauMax.txt")):
         self.__data = data
         self.__parallel = parallel
         self.__tauTimes = None
@@ -21,6 +21,7 @@ class Benchmark:
         self.__columns = None
         self.__tausLines = None
         self.__shapesLines = None
+        self.__saveFnames = savefileNames
 
     def __noBenchmarkDoneWarning(self):
         warn.warn("No benchmark done. Please run with `start` method.")
@@ -116,16 +117,16 @@ class Benchmark:
             print(f"{'=' * 5} Ending {col} {'=' * 5}")
 
     def __saveTauTimes(self):
-        fname = "tauMax.txt"
+        fname = self.__saveFnames[1]
         if self.__parallel:
-            fname = "tauMax_par.txt"
+            fname = "par_" + fname
         df = pd.DataFrame(self.__tauTimes, index=self.__tausLines, columns=self.__columns)
         df.to_csv(fname)
 
     def __saveShapeTimes(self):
-        fname = "shapes.txt"
+        fname = self.__saveFnames[0]
         if self.__parallel:
-            fname = "shapes_par.txt"
+            fname = "par_" + fname
         df = pd.DataFrame(self.__shapeTimes, index=self.__shapesLines, columns=self.__columns)
         df.to_csv(fname)
 
@@ -137,14 +138,18 @@ class BenchmarkStats:
 
 
 if __name__ == '__main__':
-    shapes = [(10, 10), (100, 10), (440, 10), (10, 15), (100, 15), (440, 15), (10, 20), (100, 20), (440, 20),
-              (10, 25), (100, 25), (440, 25), (10, 30), (100, 30), (440, 30), (10, 32), (100, 32), (440, 32), (10, 33),
-              (100, 33), (440, 33)]
-    taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 100, 150, 200]
+    shapes = [(10, 10), (20, 10), (100, 10), (440, 10), (10, 15), (20, 15), (100, 15), (440, 15), (10, 20),
+              (20, 20), (100, 20), (440, 20), (10, 25), (20, 25), (100, 25), (440, 25), (10, 30), (20, 30), (100, 30),
+              (440, 30), (10, 32), (20, 32), (100, 32), (440, 32), (10, 33), (20, 33), (100, 33), (440, 33)]
+    shapes2 = [(10, 10), (10, 20), (10, 25), (10, 30), (100, 10), (100, 30), (100, 20), (100, 25), (440, 25), (440, 30),
+               (440, 20), (440, 10)]
+    taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 100, 150]
     datashape = (400, 20)
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
 
-    b = Benchmark(data)
-    b.start(6, shapes, taus, datashape)
+    b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"))
+    b.start(1, shapes, taus, datashape)
+    b2 = Benchmark(data, False, ("shapesUnordered.txt", "tauMax.txt"))
+    b2.start(1, shapes2, datashape)
