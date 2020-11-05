@@ -3,12 +3,13 @@ import run_pcmci_parallel_v2
 import time
 import os
 import numpy as np
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 from tigramite.independence_tests import ParCorr, CMIknn
 import tigramite.data_processing as pp
-import tigramite.plotting as tp
 import pandas as pd
 import warnings as warn
+import typing
+import re
 
 
 class Benchmark:
@@ -22,9 +23,18 @@ class Benchmark:
         self.__tausLines = None
         self.__shapesLines = None
         self.__saveFnames = savefileNames
+        self.__shapesDataframe = None
+        self.__tausDataframe = None
 
     def __noBenchmarkDoneWarning(self):
         warn.warn("No benchmark done. Please run with `start` method.")
+
+    @property
+    def completDataframes(self):
+        if self.__shapesDataframe is None or self.__tausDataframe is None:
+            self.__noBenchmarkDoneWarning()
+            return None
+        return self.__shapesDataframe, self.__tausDataframe
 
     @property
     def data(self):
@@ -122,6 +132,7 @@ class Benchmark:
             fname = "par_" + fname
         df = pd.DataFrame(self.__tauTimes, index=self.__tausLines, columns=self.__columns)
         df.to_csv(fname)
+        self.__tausDataframe = df
 
     def __saveShapeTimes(self):
         fname = self.__saveFnames[0]
@@ -129,12 +140,92 @@ class Benchmark:
             fname = "par_" + fname
         df = pd.DataFrame(self.__shapeTimes, index=self.__shapesLines, columns=self.__columns)
         df.to_csv(fname)
+        self.__shapesDataframe = df
 
 
-class BenchmarkStats:
+class BaseBenchmarkStats:
 
-    def __init__(self):
-        pass
+    def __init__(self, shapesTimeDataframe: pd.DataFrame, tausTimeDataframe: pd.DataFrame):
+        self.__dataframeShapes = shapesTimeDataframe
+        self.__dataframeTaus = tausTimeDataframe
+        # Cannot put both in the same stack, they might not have the same shape!
+        self.__rowiseMeanShapes = self.computeRowiseMean(self.__dataframeShapes)
+        self.__rowiseMeanTaus = self.computeRowiseMean(self.__dataframeTaus)
+        self.__rowiseStdDevShapes = self.computeRowiseStandardDeviation(self.__dataframeShapes)
+        self.__rowiseStdDevTaus = self.computeRowiseStandardDeviation(self.__dataframeTaus)
+
+    @property
+    def shapeTimeMean(self):
+        return self.__rowiseMeanShapes
+
+    @property
+    def tauTimeMean(self):
+        return self.__rowiseMeanTaus
+
+    @property
+    def shapeTimeStdDev(self):
+        return self.__rowiseStdDevShapes
+
+    @property
+    def tauTimeStdDev(self):
+        return self.__rowiseStdDevTaus
+
+    @property
+    def tausDataframe(self):
+        return self.__dataframeTaus
+
+    @property
+    def shapesDataframe(self):
+        return self.__dataframeShapes
+
+    def plotTimeFctShape(self):
+        index = self.__dataframeShapes.index
+
+        # Retrieve tuples from strings
+        index = [tuple(map(int, s[1: -1].split(","))) for s in index]
+        nbVars = [i[-1] for i in index]
+        nbTimeSteps = [i[0] for i in index]
+        y = self.__rowiseMeanShapes
+        fig, axs = plt.subplots(1, 2)
+        axs[0].plot(nbVars, y)
+        axs[1].plot(nbTimeSteps, y)
+        plt.show()
+
+    def plotTimeFctTauMax(self, show: bool = True, savefig: bool = True, figname: str = None):
+        nbRuns = len(self.__dataframeTaus.columns) - 1
+        plt.plot(self.__rowiseMeanTaus)
+        plt.xlabel(r"$\tau_{max}$ [-]")
+        plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions) [s]")
+        if savefig:
+            if figname is None:
+                figname = "tempsFonctionTau.png"
+            plt.savefig(figname)
+        if show:
+            plt.show()
+
+    @staticmethod
+    def computeRowiseMean(data: typing.Union[np.ndarray, pd.DataFrame]):
+        return np.mean(data, 1)
+
+    @staticmethod
+    def computeRowiseStandardDeviation(data: typing.Union[np.ndarray, pd.DataFrame]):
+        return np.std(data, 1)
+
+
+class BenchmarkStats(BaseBenchmarkStats):
+
+    def __init__(self, benchmark: Benchmark):
+        dfs = benchmark.completDataframes
+        if dfs is None:
+            raise ValueError("No benchmark information.")
+        super(BenchmarkStats, self).__init__(*dfs)
+
+
+class BenchmarkStatsFromFiles(BaseBenchmarkStats):
+
+    def __init__(self, shapesTimeFilename: str, tausTimeFilename: str):
+        dfs = (pd.read_csv(shapesTimeFilename, index_col=0), pd.read_csv(tausTimeFilename, index_col=0))
+        super(BenchmarkStatsFromFiles, self).__init__(*dfs)
 
 
 if __name__ == '__main__':
