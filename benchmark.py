@@ -96,7 +96,7 @@ class Benchmark:
         dataframe = pp.DataFrame(data)
         cond_ind_test = ParCorr()
         pcmci = PCMCI(dataframe=dataframe, cond_ind_test=cond_ind_test)
-        results = pcmci.run_pcmciplus(tau_min=0, tau_max=tau_max, pc_alpha=0.01)
+        results = pcmci.run_pcmci(tau_min=0, tau_max=tau_max, pc_alpha=0.01)
 
     def runPCMCI_par(self, data: np.ndarray, tau_max: int):
         dataframe = pp.DataFrame(data)
@@ -152,4 +152,4 @@ if __name__ == '__main__':
     b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"))
     b.start(1, shapes, taus, datashape)
     b2 = Benchmark(data, False, ("shapesUnordered.txt", "tauMax.txt"))
-    b2.start(1, shapes2, datashape)
+    b2.start(1, shapes2, taus, datashape)
