@@ -9,7 +9,6 @@ import tigramite.data_processing as pp
 import pandas as pd
 import warnings as warn
 import typing
-import re
 
 
 class Benchmark:
