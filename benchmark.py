@@ -180,7 +180,7 @@ class BaseBenchmarkStats:
 
     def plotTimeFctShape(self, show: bool = True, savefig: bool = True, figname: str = None):
         index = self.__dataframeShapes.index
-
+        nbRuns = len(self.__dataframeShapes.columns) - 1
         # Retrieve tuples from strings
         if any(not isinstance(s, tuple) for s in index):
             index = [tuple(map(int, s[1: -1].split(","))) for s in index]
@@ -189,7 +189,10 @@ class BaseBenchmarkStats:
         y = self.__rowiseMeanShapes
         fig, axs = plt.subplots(1, 2)
         axs[0].plot(nbVars, y)
+        axs[0].xlabel = "Nombre de variables [-]"
         axs[1].plot(nbTimeSteps, y)
+        axs[1].xlabel = "Nombre de pas de temps [-]"
+        axes[0].ylabel = f"Moyenne temps (sur {nbRuns} exécutions) [s]"
         if savefig:
             if figname is None:
                 figname = "tempsFonctionShape.png"
@@ -238,7 +241,10 @@ if __name__ == '__main__':
     shapes = [(50, 10), (100, 10), (200, 10), (300, 10), (400, 10), (440, 10), (50, 20), (100, 20), (200, 20),
               (300, 20), (400, 20), (440, 20), (50, 40), (100, 40), (200, 40), (300, 40), (400, 40), (440, 40),
               (50, 50), (100, 50), (200, 50), (300, 50), (400, 50), (440, 50), (50, 100), (100, 100), (200, 100),
-              (300, 100), (400, 100), (440, 100)]
+              (300, 100), (400, 100), (440, 100), (50, 200), (100, 200), (200, 200),
+              (300, 200), (400, 200), (440, 200), (50, 300), (100, 300), (200, 300),
+              (300, 300), (400, 300), (440, 300), (50, 300), (100, 300), (200, 300),
+              (300, 300), (400, 300), (440, 300)]
     taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 100, 150]
     datashape = (400, 20)
 
@@ -246,8 +252,15 @@ if __name__ == '__main__':
     data = np.load(path).T
 
     b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"))
-    b.start(1, shapes, taus, datashape)
+    b.start(3, shapes, taus, datashape)
 
     bstats = BenchmarkStats(b)
     bstats.plotTimeFctShape(False, True)
     bstats.plotTimeFctTauMax(False, True)
+
+    b = Benchmark(data, True, ("shapes.txt", "tauMax.txt"))
+    b.start(3, shapes, taus, datashape)
+
+    bstats = BenchmarkStats(b)
+    bstats.plotTimeFctShape(False, True, "tempsFonctionTau_par.png")
+    bstats.plotTimeFctTauMax(False, True, "ShapeFonctionTau_par.png")
