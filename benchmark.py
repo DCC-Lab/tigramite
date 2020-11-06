@@ -178,7 +178,7 @@ class BaseBenchmarkStats:
     def shapesDataframe(self):
         return self.__dataframeShapes
 
-    def plotTimeFctShape(self):
+    def plotTimeFctShape(self, , show: bool = True, savefig: bool = True, figname: str = None):
         index = self.__dataframeShapes.index
 
         # Retrieve tuples from strings
@@ -189,7 +189,12 @@ class BaseBenchmarkStats:
         fig, axs = plt.subplots(1, 2)
         axs[0].plot(nbVars, y)
         axs[1].plot(nbTimeSteps, y)
-        plt.show()
+        if savefig:
+            if figname is None:
+                figname = "tempsFonctionShape.png"
+            fig.savefig(figname)
+        if show:
+            plt.show()
 
     def plotTimeFctTauMax(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__dataframeTaus.columns) - 1
@@ -229,11 +234,10 @@ class BenchmarkStatsFromFiles(BaseBenchmarkStats):
 
 
 if __name__ == '__main__':
-    shapes = [(10, 10), (20, 10), (100, 10), (440, 10), (10, 15), (20, 15), (100, 15), (440, 15), (10, 20),
-              (20, 20), (100, 20), (440, 20), (10, 25), (20, 25), (100, 25), (440, 25), (10, 30), (20, 30), (100, 30),
-              (440, 30), (10, 32), (20, 32), (100, 32), (440, 32), (10, 33), (20, 33), (100, 33), (440, 33)]
-    shapes2 = [(100, 10), (100, 20), (100, 25), (100, 30), (100, 32), (100, 33), (10, 20), (10, 25), (10, 10), (10, 30),
-               (10, 32), (10, 33), (440, 10), (440, 20), (440, 25), (440, 30), (440, 32), (440, 33)]
+    shapes = [(50, 10), (100, 10), (200, 10), (300, 10), (400, 10), (440, 10), (50, 20), (100, 20), (200, 20),
+              (300, 20), (400, 20), (440, 20), (50, 40), (100, 40), (200, 40), (300, 40), (400, 40), (440, 40),
+              (50, 50), (100, 50), (200, 50), (300, 50), (400, 50), (440, 50), (50, 100), (100, 100), (200, 100),
+              (300, 100), (400, 100), (440, 100)]
     taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 100, 150]
     datashape = (400, 20)
 
@@ -241,6 +245,8 @@ if __name__ == '__main__':
     data = np.load(path).T
 
     b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"))
-    # b.start(1, shapes, taus, datashape)
-    b2 = Benchmark(data, False, ("shapesV2.txt", "tauMax.txt"))
-    b2.start(1, shapes2, taus, datashape)
+    b.start(1, shapes, taus, datashape)
+
+    bstats = BenchmarkStats(b)
+    bstats.plotTimeFctShape(False, True)
+    bstats.plotTimeFctTauMax(False, True)
