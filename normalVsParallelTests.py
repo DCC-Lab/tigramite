@@ -87,7 +87,6 @@ if __name__ == '__main__':
     shapes = [(50, 10), (100, 10), (200, 10), (300, 10), (400, 10), (440, 10), (50, 20), (100, 20), (200, 20),
               (300, 20), (400, 20), (440, 20), (50, 40), (100, 40), (200, 40), (300, 40), (400, 40), (440, 40)]
     allData = [data[:shape[0], :shape[1]] for shape in shapes]
-    print([d.shape for d in allData])
     m = MultipleParallelVsNormalTests(allData, cond_ind_test, tau_min, tau_max, pc_alpha)
     m.runAllForBoth()
     m.compareAllParentsForAllTests()
