@@ -686,6 +686,7 @@ class PCMCI():
                                              pc_alpha=_int_pc_alpha[0],
                                              max_conds_dim=max_conds_dim,
                                              max_combinations=max_combinations)
+        return results["parents"]
 
     def run_pc_stable(self,
                       selected_links=None,
