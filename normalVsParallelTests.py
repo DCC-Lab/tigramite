@@ -30,12 +30,19 @@ class ParallelVsNormalTest:
         self.__normalAllParents = pcmci_norm.all_parents
         self.__parallelAllParents = pcmci_par.all_parents
 
-    def compareAllParents(self):
+    def compareAllParents(self, , saveDiffToFile: bool = True, diffFilename: str = None):
         if self.__normalAllParents is None or self.__parallelAllParents is None:
             raise ValueError("Nothing to compare. Please run both methods.")
         same = self.__normalAllParents == self.__parallelAllParents
         if not same:
             diff = self.dictDifference(self.__normalAllParents, self.__parallelAllParents)
+            if saveDiffToFile:
+                if diffFilename is None:
+                    diffFilename = "differences.txt"
+                if not diffFilename.endswith(".txt"):
+                    diffFilename += ".txt"
+                with open(diffFilename, "w") as f:
+                    f.write(diff)
             print(diff)
         return same
 
@@ -62,10 +69,11 @@ class MultipleParallelVsNormalTests:
             singleTest.runForBoth()
             self.__allTestObjs.append(singleTest)
 
-    def compareAllParentsForAllTests(self):
+    def compareAllParentsForAllTests(self, saveDiffToFile: bool = True):
         sames = []
-        for obj in self.__allTestObjs:
-            sames.append(obj.compareAllParents)
+        for i, obj in enumerate(self.__allTestObjs):
+            diffFilename = f"data{i + 1}.txt"
+            sames.append(obj.compareAllParents(saveDiffToFile, diffFilename))
         return sames
 
 
