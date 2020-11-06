@@ -84,10 +84,11 @@ if __name__ == '__main__':
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
-    shapes = [(10, 10), (20, 10), (100, 10), (440, 10), (10, 15), (20, 15), (100, 15), (440, 15), (10, 20),
+    shapes = [(100, 10), (440, 10), (10, 15), (20, 15), (100, 15), (440, 15), (10, 20),
               (20, 20), (100, 20), (440, 20), (10, 25), (20, 25), (100, 25), (440, 25), (10, 30), (20, 30), (100, 30),
               (440, 30)]
     allData = [data[:shape[0], :shape[1]] for shape in shapes]
+    print([d.shape for d in allData])
     m = MultipleParallelVsNormalTests(allData, cond_ind_test, tau_min, tau_max, pc_alpha)
     m.runAllForBoth()
     m.compareAllParentsForAllTests()
