@@ -47,13 +47,13 @@ class PCMCIProfilerLongVersion(PCMCIProfiler):
     def __init__(self):
         path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
         data = np.load(path).T
-        data = data[:440, :30]
+        data = data[:440, :50]
         cond_ind_test = ParCorr()
         super(PCMCIProfilerLongVersion, self).__init__(data, cond_ind_test)
 
 
 if __name__ == '__main__':
-    runLongVersion = input("Run the long version (more than 30 minutes)? 'Y' to proceed.\n")
+    runLongVersion = input("Run the long version? 'Y' to proceed.\n")
     if runLongVersion == "Y":
         pcmciProfileLong = PCMCIProfilerLongVersion()
         pcmciProfileLong.profile(False)
