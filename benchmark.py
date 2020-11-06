@@ -178,7 +178,7 @@ class BaseBenchmarkStats:
     def shapesDataframe(self):
         return self.__dataframeShapes
 
-    def plotTimeFctShape(self, , show: bool = True, savefig: bool = True, figname: str = None):
+    def plotTimeFctShape(self, show: bool = True, savefig: bool = True, figname: str = None):
         index = self.__dataframeShapes.index
 
         # Retrieve tuples from strings
