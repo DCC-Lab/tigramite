@@ -44,7 +44,6 @@ class PCMCI_Parallel:
         if nbWorkers > mp.cpu_count():
             nbWorkers = mp.cpu_count()
 
-        splittedJobs = self.split(range(self.__nbVar), nbWorkers)
         splittedJobs = range(self.__nbVar)
 
         with mp.Pool(nbWorkers) as pool:
