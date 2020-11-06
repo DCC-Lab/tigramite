@@ -182,7 +182,8 @@ class BaseBenchmarkStats:
         index = self.__dataframeShapes.index
 
         # Retrieve tuples from strings
-        index = [tuple(map(int, s[1: -1].split(","))) for s in index]
+        if any(not isinstance(s, tuple) for s in index):
+            index = [tuple(map(int, s[1: -1].split(","))) for s in index]
         nbVars = [i[-1] for i in index]
         nbTimeSteps = [i[0] for i in index]
         y = self.__rowiseMeanShapes
