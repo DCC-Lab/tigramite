@@ -30,7 +30,7 @@ class ParallelVsNormalTest:
         self.__normalAllParents = pcmci_norm.all_parents
         self.__parallelAllParents = pcmci_par.all_parents
 
-    def compareAllParents(self, , saveDiffToFile: bool = True, diffFilename: str = None):
+    def compareAllParents(self, saveDiffToFile: bool = True, diffFilename: str = None):
         if self.__normalAllParents is None or self.__parallelAllParents is None:
             raise ValueError("Nothing to compare. Please run both methods.")
         same = self.__normalAllParents == self.__parallelAllParents
