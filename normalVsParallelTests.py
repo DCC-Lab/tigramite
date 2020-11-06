@@ -78,31 +78,16 @@ class MultipleParallelVsNormalTests:
 
 
 if __name__ == '__main__':
-    np.random.seed(43)
-
-
-    # Example process to play around with
-    # Each key refers to a variable and the incoming links are supplied
-    # as a list of format [((var, -lag), coeff, function), ...]
-    def lin_f(x):
-        return x
-
-
-    def nonlin_f(x):
-        return x + 5. * x ** 2 * np.exp(-x ** 2 / 20.)
-
-
-    links = {0: [((0, -1), 0.9, lin_f)],
-             1: [((1, -1), 0.8, lin_f), ((0, -1), 0.8, lin_f)],
-             2: [((2, -1), 0.7, lin_f), ((1, 0), 0.6, lin_f)],
-             3: [((3, -1), 0.7, lin_f), ((2, 0), -0.5, lin_f)],
-             }
-
-    data, nonstat = pp.structural_causal_process(links, T=1000, seed=7)
     cond_ind_test = ParCorr()
     tau_max, tau_min = 5, 1
     pc_alpha = 0.01
 
-    singleTest = ParallelVsNormalTest(data, cond_ind_test, tau_min, tau_max, pc_alpha)
-    singleTest.runForBoth()
-    singleTest.compareAllParents()
+    path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
+    data = np.load(path).T
+    shapes = [(10, 10), (20, 10), (100, 10), (440, 10), (10, 15), (20, 15), (100, 15), (440, 15), (10, 20),
+              (20, 20), (100, 20), (440, 20), (10, 25), (20, 25), (100, 25), (440, 25), (10, 30), (20, 30), (100, 30),
+              (440, 30)]
+    allData = [data[:shape[0], :shape[1]] for shape in shapes]
+    m = MultipleParallelVsNormalTests(allData, cond_ind_test, tau_min, tau_max, pc_alpha)
+    m.runAllForBoth()
+    m.compareAllParentsForAllTests()
