@@ -3,7 +3,6 @@ Parallel PCMCI: new version using Python's multiprocessing module instead of MPI
 """
 
 import numpy as np
-import os, sys, pickle
 
 from tigramite import data_processing as pp
 from tigramite.pcmci import PCMCI
