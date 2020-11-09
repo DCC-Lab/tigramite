@@ -29,7 +29,7 @@ class Benchmark:
         warn.warn("No benchmark done. Please run with `start` method.")
 
     @property
-    def completDataframes(self):
+    def completeDataframes(self):
         if self.__shapesDataframe is None or self.__tausDataframe is None:
             self.__noBenchmarkDoneWarning()
             return None
@@ -110,7 +110,7 @@ class Benchmark:
     def runPCMCI_par(self, data: np.ndarray, tau_max: int):
         dataframe = pp.DataFrame(data)
         cond_ind_test = ParCorr()
-        pcmci = run_pcmci_parallel_v2.PCMCI_Parallel(data, tau_max, 0.01)
+        pcmci = run_pcmci_parallel_v2.PCMCI_Parallel(data, 0, tau_max, 0.01)
         results = pcmci.start()
 
     def start(self, nbRuns: int, shapes: list, taus: list, dataShape: tuple = (400, 20), tau_max: int = 3):
@@ -191,7 +191,7 @@ class BaseBenchmarkStats:
         axs[0].xlabel = "Nombre de variables [-]"
         axs[1].plot(nbTimeSteps, y)
         axs[1].xlabel = "Nombre de pas de temps [-]"
-        axes[0].ylabel = f"Moyenne temps (sur {nbRuns} exécutions) [s]"
+        axs[0].ylabel = f"Moyenne temps (sur {nbRuns} exécutions) [s]"
         if savefig:
             if figname is None:
                 figname = "tempsFonctionShape.png"
@@ -223,7 +223,7 @@ class BaseBenchmarkStats:
 class BenchmarkStats(BaseBenchmarkStats):
 
     def __init__(self, benchmark: Benchmark):
-        dfs = benchmark.completDataframes
+        dfs = benchmark.completeDataframes
         if dfs is None:
             raise ValueError("No benchmark information.")
         super(BenchmarkStats, self).__init__(*dfs)
@@ -236,14 +236,97 @@ class BenchmarkStatsFromFiles(BaseBenchmarkStats):
         super(BenchmarkStatsFromFiles, self).__init__(*dfs)
 
 
+class BenchmarkStatsComparisonBase:
+
+    def __init__(self, shapesTimeDataframe: pd.DataFrame, tausTimeDataframe: pd.DataFrame,
+                 par_shapesTimeDataframe: pd.DataFrame, par_tausTimeDataframe: pd.DataFrame):
+        self.__normalShapes = shapesTimeDataframe
+        self.__parShapes = par_shapesTimeDataframe
+        self.__normalTaus = tausTimeDataframe
+        self.__parTaus = par_tausTimeDataframe
+        self.__rowiseMeanShapesNormal = BenchmarkStats.computeRowiseMean(self.__normalShapes)
+        self.__rowiseMeanTausNormal = BenchmarkStats.computeRowiseMean(self.__normalTaus)
+        self.__rowiseMeanShapesPar = BenchmarkStats.computeRowiseMean(self.__parShapes)
+        self.__rowiseMeanTausPar = BenchmarkStats.computeRowiseMean(self.__parTaus)
+
+    def plotTimeFctShapeComparison(self, show: bool = True, savefig: bool = True, figname: str = None):
+        index = self.__normalShapes.index
+        nbRuns = len(self.__normalShapes.columns) - 1
+        # Retrieve tuples from strings
+        if any(not isinstance(s, tuple) for s in index):
+            index = [tuple(map(int, s[1: -1].split(","))) for s in index]
+        nbVars1 = [i[-1] for i in index]
+        nbTimeSteps1 = [i[0] for i in index]
+        y1 = self.__rowiseMeanShapesNormal
+
+        index2 = self.__parShapes.index
+        nbRuns2 = len(self.__parShapes.columns) - 1
+        # Retrieve tuples from strings
+        if any(not isinstance(s, tuple) for s in index2):
+            index2 = [tuple(map(int, s[1: -1].split(","))) for s in index2]
+        nbVars2 = [i[-1] for i in index2]
+        nbTimeSteps2 = [i[0] for i in index2]
+        y2 = self.__rowiseMeanShapesNormal
+
+        fig, axs = plt.subplots(1, 2)
+        axs[0].plot(nbVars1, y1, label="Normal")
+        axs[0].plot(nbVars2, y2, label="Parallèle")
+        axs[0].legend()
+        axs[0].xlabel = "Nombre de variables [-]"
+        axs[1].plot(nbTimeSteps1, y1, label="Normal")
+        axs[1].plot(nbTimeSteps2, y2, lable="Parallèle")
+        axs[0].legend()
+        axs[1].xlabel = "Nombre de pas de temps [-]"
+        axs[0].ylabel = f"Moyenne temps (sur {nbRuns} exécutions pour normal, {nbRuns2} pour parallèle) [s]"
+        if savefig:
+            if figname is None:
+                figname = "tempsFonctionShapeComparaison.png"
+            fig.savefig(figname)
+        if show:
+            plt.show()
+
+    def plotTimeFctTauMaxComparison(self, show: bool = True, savefig: bool = True, figname: str = None):
+        nbRuns = len(self.__normalTaus.columns) - 1
+        plt.plot(self.__rowiseMeanTausNormal)
+        nbRuns2 = len(self.__parTaus.columns) - 1
+        plt.plot(self.__rowiseMeanTausPar)
+        plt.xlabel(r"$\tau_{max}$ [-]")
+        plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions pour normal, {nbRuns2} pour parallèle) [s]")
+        if savefig:
+            if figname is None:
+                figname = "tempsFonctionTauComparaison.png"
+            plt.savefig(figname)
+        if show:
+            plt.show()
+
+
+class BenchmarkStatsComparison(BenchmarkStatsComparisonBase):
+
+    def __init__(self, parallelBenchmarkObj: Benchmark, normalBenchmarkObj: Benchmark):
+        parallelDfs = parallelBenchmarkObj.completeDataframes
+        normalDfs = normalBenchmarkObj.completeDataframes
+        super(BenchmarkStatsComparison, self).__init__(*normalDfs, *parallelDfs)
+
+
+class BenchmarkStatsComparisonFromFiles(BenchmarkStatsComparisonBase):
+
+    def __init__(self, parallelShapesTimeFilename: str, parallelTausTimeFilename: str, normalShapesTimeFilename: str,
+                 normalTausTimeFilename: str):
+        normalDfs = (
+            pd.read_csv(normalShapesTimeFilename, index_col=0), pd.read_csv(normalTausTimeFilename, index_col=0))
+        parallelDfs = (
+            pd.read_csv(parallelShapesTimeFilename, index_col=0), pd.read_csv(parallelTausTimeFilename, index_col=0))
+        super(BenchmarkStatsComparisonFromFiles, self).__init__(*normalDfs, *parallelDfs)
+
+
 if __name__ == '__main__':
     shapes = [(50, 10), (100, 10), (200, 10), (300, 10), (400, 10), (440, 10), (50, 20), (100, 20), (200, 20),
               (300, 20), (400, 20), (440, 20), (50, 40), (100, 40), (200, 40), (300, 40), (400, 40), (440, 40),
               (50, 50), (100, 50), (200, 50), (300, 50), (400, 50), (440, 50), (50, 100), (100, 100), (200, 100),
               (300, 100), (400, 100), (440, 100), (50, 200), (100, 200), (200, 200),
               (300, 200), (400, 200), (440, 200), (50, 300), (100, 300), (200, 300),
-              (300, 300), (400, 300), (440, 300), (50, 300), (100, 300), (200, 300),
-              (300, 300), (400, 300), (440, 300)]
+              (300, 300), (400, 300), (440, 300), (50, 400), (100, 400), (200, 400),
+              (300, 400), (400, 400), (440, 400)]
     taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 100, 150]
     datashape = (400, 20)
 
@@ -257,9 +340,13 @@ if __name__ == '__main__':
     bstats.plotTimeFctShape(False, True)
     bstats.plotTimeFctTauMax(False, True)
 
-    b = Benchmark(data, True, ("shapes.txt", "tauMax.txt"))
-    b.start(3, shapes, taus, datashape)
+    bPar = Benchmark(data, True, ("shapes.txt", "tauMax.txt"))
+    bPar.start(3, shapes, taus, datashape)
 
-    bstats = BenchmarkStats(b)
+    bstats = BenchmarkStats(bPar)
     bstats.plotTimeFctShape(False, True, "tempsFonctionTau_par.png")
-    bstats.plotTimeFctTauMax(False, True, "ShapeFonctionTau_par.png")
+    bstats.plotTimeFctTauMax(False, True, "tempsFonctionShape_par.png")
+
+    comp = BenchmarkStatsComparisonFromFiles("par_shapes.txt", "par_tauMax.txt", "shapes.txt", "tausMax.txt")
+    comp.plotTimeFctTauMaxComparison(False)
+    comp.plotTimeFctShapeComparison(False)
