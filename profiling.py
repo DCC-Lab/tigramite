@@ -6,6 +6,7 @@ from tigramite.independence_tests import ParCorr, CMIknn
 import tigramite.data_processing as pp
 from tigramite.pcmci import PCMCI
 import os
+from run_pcmci_parallel_v2 import PCMCI_Parallel
 
 
 class ProfilerHandler:
@@ -52,12 +53,22 @@ class PCMCIProfilerLongVersion(PCMCIProfiler):
         super(PCMCIProfilerLongVersion, self).__init__(data, cond_ind_test)
 
 
+class PCMCIProfilerLongVersionParallel(ProfilerHandler):
+
+    def __init__(self):
+        path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
+        data = np.load(path).T
+        data = data[:440, :50]
+        pcmci_par = PCMCI_Parallel(data, 0, 5, 0.01)
+        super(PCMCIProfilerLongVersionParallel, self).__init__(pcmci_par.start)
+
+
 if __name__ == '__main__':
     runLongVersion = input("Run the long version? 'Y' to proceed.\n")
     if runLongVersion == "Y":
-        pcmciProfileLong = PCMCIProfilerLongVersion()
+        pcmciProfileLong = PCMCIProfilerLongVersionParallel()
         pcmciProfileLong.profile(False)
-        pcmciProfileLong.writeStatsToFile("longProfiling.txt")
+        pcmciProfileLong.writeStatsToFile("longProfilingParallel.txt")
     else:
         np.random.seed(43)
 
