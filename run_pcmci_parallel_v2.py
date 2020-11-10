@@ -8,6 +8,7 @@ from tigramite import data_processing as pp
 from tigramite.pcmci import PCMCI
 from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
 import multiprocessing as mp
+import time
 
 
 class PCMCI_Parallel:
@@ -27,14 +28,18 @@ class PCMCI_Parallel:
         return [container[i::count] for i in range(count)]
 
     def run_pc_stable_parallel_singleVariable(self, variable):
+        start = time.time()
         pcmci_var = PCMCI(dataframe=self.__data, cond_ind_test=self.__cond_ind_test)
         parents_of_var = pcmci_var.run_pc_stable_singleVar(variable, None, self.__tau_min, self.__tau_max,
                                                            pc_alpha=self.__pc_alpha)
         parents_of_var = {variable: parents_of_var}
+        print(f"PC algo done for var {variable}, time {time.time() - start} s")
         return variable, pcmci_var, parents_of_var
 
     def run_mci_parallel_singleVar(self, variable, pcmci_var, parents_of_var):
+        start = time.time()
         results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max, parents=parents_of_var)
+        print(f"MCI algo done for var {variable}, time {time.time() - start} s")
         return variable, pcmci_var, parents_of_var, results_in_var
 
     def start(self, nbWorkers: int = None):
@@ -77,14 +82,18 @@ class OlderVariant_PCMCI_Parallel:
         return [container[i::count] for i in range(count)]
 
     def run_pc_stable_parallel_singleVariable(self, variable):
+        start = time.time()
         pcmci_var = PCMCI(dataframe=self.__data, cond_ind_test=self.__cond_ind_test)
         parents_of_var = pcmci_var.run_pc_stable_singleVar(variable, None, self.__tau_min, self.__tau_max,
                                                            pc_alpha=self.__pc_alpha)
+        print(f"PC algo done for var {variable}, time {time.time() - start} s")
         return variable, pcmci_var, parents_of_var
 
     def run_mci_parallel_singleVar(self, variable):
+        start = time.time()
         variabel, pcmci_var, parents_of_var = self.run_pc_stable_parallel_singleVariable(variable)
         results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max)
+        print(f"MCI algo done for var {variable}, time {time.time() - start} s")
         return variable, pcmci_var, parents_of_var, results_in_var
 
     def start(self, nbWorkers: int = None):
@@ -125,22 +134,8 @@ if __name__ == '__main__':
     data = np.load(path).T
     data = data[:440, :100]
     par = PCMCI_Parallel(data, 1, 5, 0.01)
-    import time
 
-    s = time.time()
     par.start()
-    print(time.time() - s)
-    # print(par.all_parents)
-    norm = PCMCI(pp.DataFrame(data), ParCorr())
-    s = time.time()
-    norm.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
-    print(time.time() - s)
-    # print(norm.all_parents)
+    print("OLD VERSION")
     par_old = OlderVariant_PCMCI_Parallel(data, 1, 5, 0.01)
-    s = time.time()
     par_old.start()
-    print(time.time() - s)
-    # print(par_old.all_parents)
-    print(par.all_parents == norm.all_parents)
-    print(par_old.all_parents == norm.all_parents)
-    print(par_old.all_parents == par.all_parents)
