@@ -12,6 +12,7 @@ from copy import deepcopy
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
+import time
 
 
 def _create_nested_dictionary(depth=0, lowest_type=dict):
@@ -785,6 +786,7 @@ class PCMCI():
                                                           iscore + 1,
                                                           score.shape[0]))
                 # Get the results for this alpha value
+                start = time.time()
                 results[pc_alpha_here] = \
                     self._run_pc_stable_single(j,
                                                selected_links=_int_sel_links[j],
@@ -794,6 +796,7 @@ class PCMCI():
                                                pc_alpha=pc_alpha_here,
                                                max_conds_dim=max_conds_dim,
                                                max_combinations=max_combinations)
+                print(f"PC algo done for var {j}, time {time.time() - start} s")
                 # Figure out the best score if there is more than one pc_alpha
                 # value
                 if select_optimal_alpha:
@@ -1128,6 +1131,7 @@ class PCMCI():
                                                    _int_sel_links,
                                                    max_conds_py,
                                                    max_conds_px):
+            start = time.time()
             # Set X and Y (for clarity of code)
             X = [(i, tau)]
             Y = [(j, 0)]
@@ -1151,7 +1155,7 @@ class PCMCI():
             # Record the value if the conditional independence requires it
             if self.cond_ind_test.confidence:
                 conf_matrix[i, j, abs(tau)] = conf
-
+            print(f"MCI algo done for var {j}, time {time.time() - start} s")
         # Return the values as a dictionary and store in class
         results = {'val_matrix': val_matrix,
                    'p_matrix': p_matrix,
