@@ -178,6 +178,61 @@ class NewVariant_PCMCI_Parallel:
         return output
 
 
+class NewVariant_PCMCI_Parallel_V2:
+    def __init__(self, data: np.ndarray, tau_min: int, tau_max: int, pc_alpha: float):
+        self.__nbVar = data.shape[-1]
+        self.__data = pp.DataFrame(data)
+        self.__cond_ind_test = ParCorr()
+        self.__tau_max = tau_max
+        self.__tau_min = tau_min
+        self.__pc_alpha = pc_alpha
+        self.all_parents = {}
+
+    @staticmethod
+    def split(container, count):
+        container = tuple(container)
+        return [container[i::count] for i in range(count)]
+
+    def run_pc_stable_parallel_singleVariable(self, variable):
+        start = time.time()
+        pcmci_var = PCMCI(dataframe=self.__data, cond_ind_test=self.__cond_ind_test)
+        parents_of_var = pcmci_var.run_pc_stable_singleVar(variable, None, self.__tau_min, self.__tau_max,
+                                                           pc_alpha=self.__pc_alpha)
+        print(f"PC algo done for var {variable}, time {time.time() - start} s")
+        return variable, pcmci_var, parents_of_var
+
+    def run_mci_parallel_singleVar(self, variables):
+        out = []
+        for variable in variables:
+            start = time.time()
+            variabel, pcmci_var, parents_of_var = self.run_pc_stable_parallel_singleVariable(variable)
+            results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max)
+            print(f"MCI algo done for var {variable}, time {time.time() - start} s")
+            out.append([variable, pcmci_var, parents_of_var, results_in_var])
+        return out
+
+    def start(self, nbWorkers: int = None):
+        if nbWorkers is None:
+            nbWorkers = mp.cpu_count()
+        if nbWorkers > mp.cpu_count():
+            nbWorkers = mp.cpu_count()
+
+        splittedJobs = self.split(range(self.__nbVar), nbWorkers)
+        chunkSize = len(splittedJobs) // nbWorkers
+        if chunkSize == 0:
+            chunkSize = 1
+
+        with mp.Pool(nbWorkers) as pool:
+            output = pool.map(self.run_mci_parallel_singleVar, splittedJobs)
+
+        for result in output:
+            currentVar = result[0]
+            currentParents = result[2]
+            self.all_parents[currentVar] = currentParents
+
+        return output
+
+
 if __name__ == '__main__':
     np.random.seed(42)  # Fix random seed
     links_coeffs = {0: [((0, -1), 0.7)],
@@ -194,10 +249,16 @@ if __name__ == '__main__':
     data = np.load(path).T
     data = data[:440, :100]
 
+    par_new = NewVariant_PCMCI_Parallel_V2(data, 1, 5, 0.01)
+    start = time.time()
+    par_new.start()
+    print(f"Total time: {time.time() - start} s")
+    print("New variant 2")
     par_new = NewVariant_PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
     par_new.start()
     print(f"Total time: {time.time() - start} s")
+    print("New variant 3")
     par = PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
     par.start()
