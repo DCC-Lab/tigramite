@@ -284,6 +284,7 @@ class BenchmarkStatsComparisonBase:
             fig.savefig(figname)
         if show:
             plt.show()
+        plt.close()
 
     def plotTimeFctTauMaxComparison(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__normalTaus.columns) - 1
@@ -298,6 +299,7 @@ class BenchmarkStatsComparisonBase:
             plt.savefig(figname)
         if show:
             plt.show()
+        plt.close()
 
 
 class BenchmarkStatsComparison(BenchmarkStatsComparisonBase):
@@ -350,3 +352,4 @@ if __name__ == '__main__':
     comp = BenchmarkStatsComparisonFromFiles("par_shapes.txt", "par_tauMax.txt", "shapes.txt", "tausMax.txt")
     comp.plotTimeFctTauMaxComparison(False)
     comp.plotTimeFctShapeComparison(False)
+
