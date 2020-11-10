@@ -1127,11 +1127,17 @@ class PCMCI():
             conf_matrix = np.zeros((self.N, self.N, tau_max + 1, 2))
 
         # Get the conditions as implied by the input arguments
+        allTuples = []
         for j, i, tau, Z in self._iter_indep_conds(_int_parents,
                                                    _int_sel_links,
                                                    max_conds_py,
                                                    max_conds_px):
-            #start = time.time()
+            currentTuple = (j, i, tau, Z)
+            if currentTuple not in allTuples:
+                allTuples.append(currentTuple)
+            else:
+                print("Tuple already seen!")
+            # start = time.time()
             # Set X and Y (for clarity of code)
             X = [(i, tau)]
             Y = [(j, 0)]
@@ -1155,7 +1161,7 @@ class PCMCI():
             # Record the value if the conditional independence requires it
             if self.cond_ind_test.confidence:
                 conf_matrix[i, j, abs(tau)] = conf
-            #print(f"MCI algo done for var {j}, time {time.time() - start} s")
+            # print(f"MCI algo done for var {j}, time {time.time() - start} s")
         # Return the values as a dictionary and store in class
         results = {'val_matrix': val_matrix,
                    'p_matrix': p_matrix,
