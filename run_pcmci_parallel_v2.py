@@ -171,9 +171,9 @@ class NewVariant_PCMCI_Parallel:
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
 
-        for result in output:
-            currentParents = result[2]
-            self.all_parents.update(currentParents)
+        # for result in output:
+        #     currentParents = result[2]
+        #     self.all_parents.update(currentParents)
 
         return output
 
