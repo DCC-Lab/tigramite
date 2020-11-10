@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
-    data = data[:440, :200]
+    data = data[:440, :100]
     start = time.time()
     pcmci = PCMCI(pp.DataFrame(data), ParCorr(), )
     pcmci.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
