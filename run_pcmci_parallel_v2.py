@@ -134,8 +134,11 @@ if __name__ == '__main__':
     data = np.load(path).T
     data = data[:440, :100]
     par = PCMCI_Parallel(data, 1, 5, 0.01)
-
+    start = time.time()
     par.start()
+    print(f"Total time: {time.time() - start} s")
     print("OLD VERSION")
     par_old = OlderVariant_PCMCI_Parallel(data, 1, 5, 0.01)
+    start = time.time()
     par_old.start()
+    print(f"Total time: {time.time() - start} s")
