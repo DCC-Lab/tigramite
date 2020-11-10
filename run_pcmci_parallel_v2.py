@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
-    data = data[:440, :100]
+    data = data[:440, :200]
     start = time.time()
     pcmci = PCMCI(pp.DataFrame(data), ParCorr(), )
     pcmci.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
@@ -261,6 +261,7 @@ if __name__ == '__main__':
     start = time.time()
     par_new.start()
     print(f"Total time: {time.time() - start} s")
+    exit()
     print("'New variant'")
     par_new = NewVariant_PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
