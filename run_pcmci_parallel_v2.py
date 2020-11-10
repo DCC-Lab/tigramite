@@ -193,6 +193,11 @@ if __name__ == '__main__':
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
     data = data[:440, :100]
+
+    par_new = NewVariant_PCMCI_Parallel(data, 1, 5, 0.01)
+    start = time.time()
+    par_new.start()
+    print(f"Total time: {time.time() - start} s")
     par = PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
     par.start()
