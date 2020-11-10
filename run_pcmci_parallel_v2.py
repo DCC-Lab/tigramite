@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
     par_new = NewVariant_PCMCI_Parallel_V2(data, 1, 5, 0.01)
     start = time.time()
-    par_new.start()
+    # par_new.start()
     print(f"Total time: {time.time() - start} s")
     print("'New variant'")
     par_new = NewVariant_PCMCI_Parallel(data, 1, 5, 0.01)
