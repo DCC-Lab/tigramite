@@ -147,9 +147,12 @@ class NewVariant_PCMCI_Parallel:
 
     def run_mci_parallel_singleVar(self, stuff):
         out = []
+        allParents = {}
+        for s in stuff:
+            allParents.update(s[-1])
         for variable, pcmci_var, parents_of_var in stuff:
             start = time.time()
-            results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max, parents=parents_of_var)
+            results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max, parents=allParents)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
         return out
@@ -225,10 +228,10 @@ class NewVariant_PCMCI_Parallel_V2:
         with mp.Pool(nbWorkers) as pool:
             output = pool.map(self.run_mci_parallel_singleVar, splittedJobs)
 
-        for result in output:
-            currentVar = result[0]
-            currentParents = result[2]
-            self.all_parents[currentVar] = currentParents
+        # for result in output:
+        #     currentVar = result[0]
+        #     currentParents = result[2]
+        #     self.all_parents[currentVar] = currentParents
 
         return output
 
@@ -253,12 +256,12 @@ if __name__ == '__main__':
     start = time.time()
     par_new.start()
     print(f"Total time: {time.time() - start} s")
-    print("New variant 2")
+    print("'New variant'")
     par_new = NewVariant_PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
     par_new.start()
     print(f"Total time: {time.time() - start} s")
-    print("New variant 3")
+    print("'PCMCI_Parallel'")
     par = PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
     par.start()
