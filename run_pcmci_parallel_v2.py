@@ -170,6 +170,7 @@ class NewVariant_PCMCI_Parallel:
 
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
+
         pc_output = self.split(pc_output, nbWorkers)
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
@@ -252,6 +253,9 @@ if __name__ == '__main__':
     data = np.load(path).T
     data = data[:440, :100]
 
+    pcmci = PCMCI(pp.DataFrame(data), ParCorr(), )
+    pcmci.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
+    print("New variant v2")
     par_new = NewVariant_PCMCI_Parallel_V2(data, 1, 5, 0.01)
     start = time.time()
     # par_new.start()
