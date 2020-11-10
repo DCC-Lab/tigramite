@@ -120,6 +120,7 @@ if __name__ == '__main__':
     data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
     T, N = data.shape
     import os
+
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
     data = data[:440, :100]
@@ -129,12 +130,17 @@ if __name__ == '__main__':
     s = time.time()
     par.start()
     print(time.time() - s)
-    print(par.all_parents)
+    # print(par.all_parents)
     norm = PCMCI(pp.DataFrame(data), ParCorr())
+    s = time.time()
     norm.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
-    print(norm.all_parents)
+    print(time.time() - s)
+    # print(norm.all_parents)
     par_old = OlderVariant_PCMCI_Parallel(data, 1, 5, 0.01)
     s = time.time()
     par_old.start()
     print(time.time() - s)
-    print(par_old.all_parents)
+    # print(par_old.all_parents)
+    print(par.all_parents == norm.all_parents)
+    print(par_old.all_parents == norm.all_parents)
+    print(par_old.all_parents == par.all_parents)
