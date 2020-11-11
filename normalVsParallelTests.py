@@ -27,15 +27,15 @@ class ParallelVsNormalTest:
         pcmci_norm.run_pcmci(None, self.__tau_min, self.__tau_max, pc_alpha=self.__pc_alpha)
         print("==== Running parallel PCMCI ====")
         pcmci_par.start()
-        self.__normalAllParents = pcmci_norm.all_parents
-        self.__parallelAllParents = pcmci_par.all_parents
+        self.__normalAllParents = sorted(pcmci_norm.all_parents)
+        self.__parallelAllParents = sorted(pcmci_par.all_parents)
 
     def compareAllParents(self, saveDiffToFile: bool = True, diffFilename: str = None):
         if self.__normalAllParents is None or self.__parallelAllParents is None:
             raise ValueError("Nothing to compare. Please run both methods.")
         same = self.__normalAllParents == self.__parallelAllParents
         if not same:
-            diff = self.dictDifference(self.__normalAllParents, self.__parallelAllParents)
+            diff = f"Sequential:\n{self.__normalAllParents}\nParallel:\n{self.__parallelAllParents}"
             if saveDiffToFile:
                 if diffFilename is None:
                     diffFilename = "differences.txt"
@@ -45,12 +45,6 @@ class ParallelVsNormalTest:
                     f.write(diff)
             print(diff)
         return same
-
-    @staticmethod
-    def dictDifference(d1: dict, d2: dict):
-        set1 = set(d1.items())
-        set2 = set(d2.items())
-        return set1 ^ set2
 
 
 class MultipleParallelVsNormalTests:
