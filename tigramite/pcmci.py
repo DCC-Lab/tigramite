@@ -1128,14 +1128,14 @@ class PCMCI():
         conf_matrix = None
         if self.cond_ind_test.confidence is not None:
             conf_matrix = np.zeros((self.N, self.N, tau_max + 1, 2))
-
+        self.allTuples = []
         # Get the conditions as implied by the input arguments
         for j, i, tau, Z in self._iter_indep_conds(_int_parents,
                                                    _int_sel_links,
                                                    max_conds_py,
                                                    max_conds_px):
             currentTuple = (j, i, tau, Z)
-            print(currentTuple)
+            self.allTuples.append(currentTuple)
             # start = time.time()
             # Set X and Y (for clarity of code)
             X = [(i, tau)]

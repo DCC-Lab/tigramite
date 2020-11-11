@@ -23,6 +23,7 @@ class PCMCI_Parallel:
         pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
         self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, True)
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
+        self.allTuples = []
 
     @staticmethod
     def split(container, count):
@@ -52,6 +53,7 @@ class PCMCI_Parallel:
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
             # print(f"MCI algo done for var {variable}, time {time.time() - start} s")
+            self.allTuples.extend(pcmci_var.allTuples)
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
         return out
 
@@ -94,7 +96,7 @@ if __name__ == '__main__':
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
-    data = data[:440, :100]
+    data = data[:440, :10]
 
     pcmci = PCMCI(pp.DataFrame(data), ParCorr())
     start = time.time()
@@ -106,3 +108,5 @@ if __name__ == '__main__':
     pcmci_par.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
+    print(sorted(pcmci.allTuples))
+    print(sorted(pcmci_par.allTuples))
