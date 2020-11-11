@@ -540,6 +540,7 @@ class PCMCI():
         if self.verbosity > 1:
             self._print_converged_pc_single(converged, j, max_conds_dim)
         # Return the results
+        #print(parents)
         return {'parents': parents,
                 'val_min': val_min,
                 'pval_max': pval_max,
@@ -687,7 +688,8 @@ class PCMCI():
                                              pc_alpha=_int_pc_alpha[0],
                                              max_conds_dim=max_conds_dim,
                                              max_combinations=max_combinations)
-        return results["parents"]
+        parents = {selectedVar: results["parents"]}
+        return parents
 
     def run_pc_stable(self,
                       selected_links=None,
@@ -1133,6 +1135,7 @@ class PCMCI():
                                                    max_conds_py,
                                                    max_conds_px):
             currentTuple = (j, i, tau, Z)
+            #print(currentTuple)
             if currentTuple not in allTuples:
                 allTuples.append(currentTuple)
             else:
