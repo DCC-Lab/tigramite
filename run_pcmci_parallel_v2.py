@@ -164,8 +164,10 @@ class NewVariant_PCMCI_Parallel:
         if nbWorkers > self.__nbVar:
             nbWorkers = self.__nbVar
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
+        start = time.time()
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
+        print(f"PCs done: {time.time() - start} s")
         for elem in pc_output:
             self.all_parents.update(elem[0][-1])
         # print(self.all_parents)

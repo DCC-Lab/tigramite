@@ -1827,7 +1827,7 @@ class PCMCI():
             are set.
 
         """
-
+        start = time.time()
         # Get the parents from run_pc_stable
         all_parents = self.run_pc_stable(selected_links=selected_links,
                                          tau_min=tau_min,
@@ -1836,6 +1836,7 @@ class PCMCI():
                                          pc_alpha=pc_alpha,
                                          max_conds_dim=max_conds_dim,
                                          max_combinations=max_combinations)
+        print(f"PCs done: {time.time() - start} s")
         # Get the results from run_mci, using the parents as the input
         results = self.run_mci(selected_links=selected_links,
                                tau_min=tau_min,
