@@ -29,13 +29,20 @@ class ParallelVsNormalTest:
         pcmci_par.start()
         self.__normalAllParents = sorted(pcmci_norm.all_parents)
         self.__parallelAllParents = sorted(pcmci_par.all_parents)
+        self.__normalMCITuples = sorted(pcmci_norm.allTuples)
+        self.__parallelMCITuples = sorted(pcmci_par.allTuples)
 
-    def compareAllParents(self, saveDiffToFile: bool = True, diffFilename: str = None):
+    def compareAllParentsAndMCITuples(self, saveDiffToFile: bool = True, diffFilename: str = None):
         if self.__normalAllParents is None or self.__parallelAllParents is None:
             raise ValueError("Nothing to compare. Please run both methods.")
-        same = self.__normalAllParents == self.__parallelAllParents
-        if not same:
-            diff = f"Sequential:\n{self.__normalAllParents}\nParallel:\n{self.__parallelAllParents}"
+        sameParents = self.__normalAllParents == self.__parallelAllParents
+        sameMCITuples = self.__normalMCITuples == self.__parallelMCITuples
+        diff = ""
+        if not sameParents:
+            diff += f"Sequential parents:\n{self.__normalAllParents}\nParallel parents:\n{self.__parallelAllParents}"
+        if not sameMCITuples:
+            diff += f"Sequential mci tuples:\n{self.__normalMCITuples}\nParallel mci tuples:\n{self.__normalMCITuples}"
+        if diff != "":
             if saveDiffToFile:
                 if diffFilename is None:
                     diffFilename = "differences.txt"
@@ -44,7 +51,7 @@ class ParallelVsNormalTest:
                 with open(diffFilename, "w") as f:
                     f.write(diff)
             print(diff)
-        return same
+        return sameParents and sameMCITuples
 
 
 class MultipleParallelVsNormalTests:
@@ -63,11 +70,11 @@ class MultipleParallelVsNormalTests:
             singleTest.runForBoth()
             self.__allTestObjs.append(singleTest)
 
-    def compareAllParentsForAllTests(self, saveDiffToFile: bool = True):
+    def compareForAllTests(self, saveDiffToFile: bool = True):
         sames = []
         for i, obj in enumerate(self.__allTestObjs):
             diffFilename = f"data{i + 1}.txt"
-            sames.append(obj.compareAllParents(saveDiffToFile, diffFilename))
+            sames.append(obj.compareAllParentsAndMCITuples(saveDiffToFile, diffFilename))
         print(sames)
         return sames
 
@@ -84,4 +91,4 @@ if __name__ == '__main__':
     allData = [data[:shape[0], :shape[1]] for shape in shapes]
     m = MultipleParallelVsNormalTests(allData, cond_ind_test, tau_min, tau_max, pc_alpha)
     m.runAllForBoth()
-    m.compareAllParentsForAllTests()
+    m.compareForAllTests()
