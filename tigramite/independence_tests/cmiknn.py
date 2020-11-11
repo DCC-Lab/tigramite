@@ -13,7 +13,8 @@ from .independence_tests_base import CondIndTest
 try:
     from tigramite import tigramite_cython_code
 except:
-    print("Could not import packages for CMIknn and GPDC estimation")
+    pass
+    #print("Could not import packages for CMIknn and GPDC estimation")
 
 
 class CMIknn(CondIndTest):
