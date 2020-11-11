@@ -540,7 +540,7 @@ class PCMCI():
         if self.verbosity > 1:
             self._print_converged_pc_single(converged, j, max_conds_dim)
         # Return the results
-        #print(parents)
+        # print(parents)
         return {'parents': parents,
                 'val_min': val_min,
                 'pval_max': pval_max,
@@ -674,6 +674,7 @@ class PCMCI():
         # Set the selected links
         _int_sel_links = self._set_sel_links(selected_links, tau_min, tau_max,
                                              remove_contemp=True)
+        #print(_int_sel_links)
 
         # Initialize all parents
         all_parents = dict()
@@ -1129,17 +1130,12 @@ class PCMCI():
             conf_matrix = np.zeros((self.N, self.N, tau_max + 1, 2))
 
         # Get the conditions as implied by the input arguments
-        allTuples = []
         for j, i, tau, Z in self._iter_indep_conds(_int_parents,
                                                    _int_sel_links,
                                                    max_conds_py,
                                                    max_conds_px):
             currentTuple = (j, i, tau, Z)
-            #print(currentTuple)
-            if currentTuple not in allTuples:
-                allTuples.append(currentTuple)
-            else:
-                print("Tuple already seen!")
+            # print(currentTuple)
             # start = time.time()
             # Set X and Y (for clarity of code)
             X = [(i, tau)]
@@ -1171,6 +1167,7 @@ class PCMCI():
                    'conf_matrix': conf_matrix}
         self.results = results
         return results
+
 
     def run_mci(self,
                 selected_links=None,
@@ -1837,7 +1834,6 @@ class PCMCI():
                                          max_conds_dim=max_conds_dim,
                                          max_combinations=max_combinations)
         print(f"PCs done: {time.time() - start} s")
-        return
         # Get the results from run_mci, using the parents as the input
         results = self.run_mci(selected_links=selected_links,
                                tau_min=tau_min,
