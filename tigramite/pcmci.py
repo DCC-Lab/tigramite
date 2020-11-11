@@ -674,7 +674,7 @@ class PCMCI():
         # Set the selected links
         _int_sel_links = self._set_sel_links(selected_links, tau_min, tau_max,
                                              remove_contemp=True)
-        #print(_int_sel_links)
+        # print(_int_sel_links)
 
         # Initialize all parents
         all_parents = dict()
@@ -1167,7 +1167,6 @@ class PCMCI():
                    'conf_matrix': conf_matrix}
         self.results = results
         return results
-
 
     def run_mci(self,
                 selected_links=None,
@@ -1835,12 +1834,14 @@ class PCMCI():
                                          max_combinations=max_combinations)
         print(f"PCs done: {time.time() - start} s")
         # Get the results from run_mci, using the parents as the input
+        start = time.time()
         results = self.run_mci(selected_links=selected_links,
                                tau_min=tau_min,
                                tau_max=tau_max,
                                parents=all_parents,
                                max_conds_py=max_conds_py,
                                max_conds_px=max_conds_px)
+        print(f"MCIs done: {time.time() - start}")
         # Get the values and p-values
         val_matrix = results['val_matrix']
         p_matrix = results['p_matrix']

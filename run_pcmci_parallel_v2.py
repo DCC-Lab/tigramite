@@ -51,7 +51,7 @@ class PCMCI_Parallel:
             start = time.time()
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
-            print(f"MCI algo done for var {variable}, time {time.time() - start} s")
+            # print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
         return out
 
@@ -72,12 +72,10 @@ class PCMCI_Parallel:
             self.all_parents.update(elem[0][-1])
         # print(self.all_parents)
         pc_output = self.split(pc_output, nbWorkers)
+        start = time.time()
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
-
-        # for result in output:
-        #     currentParents = result[2]
-        #     self.all_parents.update(currentParents)
+        print(f"MCIs done: {time.time() - start}")
 
         return output
 
@@ -101,10 +99,10 @@ if __name__ == '__main__':
     pcmci = PCMCI(pp.DataFrame(data), ParCorr())
     start = time.time()
     pcmci.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
-    print(pcmci.all_parents)
+    # print(pcmci.all_parents)
     print(f"Total time: {time.time() - start}")
     pcmci_par = PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
     pcmci_par.start()
-    print(pcmci_par.all_parents)
+    # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
