@@ -1837,6 +1837,7 @@ class PCMCI():
                                          max_conds_dim=max_conds_dim,
                                          max_combinations=max_combinations)
         print(f"PCs done: {time.time() - start} s")
+        return
         # Get the results from run_mci, using the parents as the input
         results = self.run_mci(selected_links=selected_links,
                                tau_min=tau_min,
