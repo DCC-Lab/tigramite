@@ -68,6 +68,7 @@ class MultipleParallelVsNormalTests:
         for i, obj in enumerate(self.__allTestObjs):
             diffFilename = f"data{i + 1}.txt"
             sames.append(obj.compareAllParents(saveDiffToFile, diffFilename))
+        print(sames)
         return sames
 
 
