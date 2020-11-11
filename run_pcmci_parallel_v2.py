@@ -121,8 +121,8 @@ class OlderVariant_PCMCI_Parallel:
 class NewVariant_PCMCI_Parallel:
     def __init__(self, data: np.ndarray, tau_min: int, tau_max: int, pc_alpha: float):
         self.__nbVar = data.shape[-1]
-        self.__data = pp.DataFrame(data)
-        self.__cond_ind_test = ParCorr()
+        self.__data = data
+        self.__cond_ind_test = ParCorr
         self.__tau_max = tau_max
         self.__tau_min = tau_min
         self.__pc_alpha = pc_alpha
@@ -135,24 +135,22 @@ class NewVariant_PCMCI_Parallel:
 
     def run_pc_stable_parallel_singleVariable(self, variables):
         out = []
+        pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
         for variable in variables:
             start = time.time()
-            pcmci_var = PCMCI(dataframe=self.__data, cond_ind_test=self.__cond_ind_test)
             parents_of_var = pcmci_var.run_pc_stable_singleVar(variable, None, self.__tau_min, self.__tau_max,
                                                                pc_alpha=self.__pc_alpha)
-            parents_of_var = {variable: parents_of_var}
             print(f"PC algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var])
         return out
 
     def run_mci_parallel_singleVar(self, stuff):
         out = []
-        allParents = {}
-        for s in stuff:
-            allParents.update(s[-1])
+        # stuff = stuff[0]
         for variable, pcmci_var, parents_of_var in stuff:
+            # print(variable)
             start = time.time()
-            results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max, parents=allParents)
+            results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max, parents=self.all_parents)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
         return out
@@ -163,14 +161,14 @@ class NewVariant_PCMCI_Parallel:
         if nbWorkers > mp.cpu_count():
             nbWorkers = mp.cpu_count()
 
+        if nbWorkers > self.__nbVar:
+            nbWorkers = self.__nbVar
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
-        chunkSize = len(splittedJobs) // nbWorkers
-        if chunkSize == 0:
-            chunkSize = 1
-
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
-
+        for elem in pc_output:
+            self.all_parents.update(elem[0][-1])
+        # print(self.all_parents)
         pc_output = self.split(pc_output, nbWorkers)
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
@@ -210,7 +208,7 @@ class NewVariant_PCMCI_Parallel_V2:
         for variable in variables:
             start = time.time()
             variabel, pcmci_var, parents_of_var = self.run_pc_stable_parallel_singleVariable(variable)
-            results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max)
+            results_in_var = pcmci_var.run_mci(tau_max=self.__tau_max, parents=parents_of_var)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
         return out
@@ -257,7 +255,7 @@ if __name__ == '__main__':
     pcmci.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
     print(f"Total time: {time.time() - start}")
     print("New variant v2")
-    par_new = NewVariant_PCMCI_Parallel_V2(data, 1, 5, 0.01)
+    par_new = NewVariant_PCMCI_Parallel(data, 1, 5, 0.01)
     start = time.time()
     par_new.start()
     print(f"Total time: {time.time() - start} s")
