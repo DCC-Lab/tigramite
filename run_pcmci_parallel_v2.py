@@ -44,8 +44,10 @@ class PCMCI_Parallel:
 
     def run_mci_parallel_singleVar(self, stuff):
         out = []
+        currentAllTuples = []
         # stuff = stuff[0]
         for variable, pcmci_var, parents_of_var in stuff:
+
             # print(variable)
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
@@ -53,9 +55,9 @@ class PCMCI_Parallel:
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
             # print(f"MCI algo done for var {variable}, time {time.time() - start} s")
-            self.allTuples.extend(pcmci_var.allTuples)
+            currentAllTuples.extend(pcmci_var.allTuples)
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
-        return out
+        return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
         if nbWorkers is None:
@@ -70,14 +72,18 @@ class PCMCI_Parallel:
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
         print(f"PCs done: {time.time() - start} s")
+
         for elem in pc_output:
-            self.all_parents.update(elem[0][-1])
+            for innerElem in elem:
+                self.all_parents.update(innerElem[-1])
         # print(self.all_parents)
         pc_output = self.split(pc_output, nbWorkers)
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
         print(f"MCIs done: {time.time() - start}")
+        for out in output:
+            self.allTuples.extend(out[1])
 
         return output
 
@@ -108,5 +114,5 @@ if __name__ == '__main__':
     pcmci_par.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
-    print(sorted(pcmci.allTuples))
-    print(sorted(pcmci_par.allTuples))
+    print(sorted(pcmci.allTuples) == sorted(pcmci_par.allTuples))
+    print(sorted(pcmci_par.all_parents) == sorted(pcmci.all_parents))
