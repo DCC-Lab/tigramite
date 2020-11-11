@@ -187,9 +187,9 @@ class BaseBenchmarkStats:
         nbTimeSteps = [i[0] for i in index]
         y = self.__rowiseMeanShapes
         fig, axs = plt.subplots(1, 2)
-        axs[0].plot(nbVars, y)
+        axs[0].scatter(nbVars, y)
         axs[0].xlabel = "Nombre de variables [-]"
-        axs[1].plot(nbTimeSteps, y)
+        axs[1].scatter(nbTimeSteps, y)
         axs[1].xlabel = "Nombre de pas de temps [-]"
         axs[0].ylabel = f"Moyenne temps (sur {nbRuns} exécutions) [s]"
         if savefig:
@@ -198,10 +198,11 @@ class BaseBenchmarkStats:
             fig.savefig(figname)
         if show:
             plt.show()
+        plt.close()
 
     def plotTimeFctTauMax(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__dataframeTaus.columns) - 1
-        plt.plot(self.__rowiseMeanTaus)
+        plt.scatter(self.__rowiseMeanTaus)
         plt.xlabel(r"$\tau_{max}$ [-]")
         plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions) [s]")
         if savefig:
@@ -210,6 +211,7 @@ class BaseBenchmarkStats:
             plt.savefig(figname)
         if show:
             plt.show()
+        plt.close()
 
     @staticmethod
     def computeRowiseMean(data: typing.Union[np.ndarray, pd.DataFrame]):
@@ -269,12 +271,12 @@ class BenchmarkStatsComparisonBase:
         y2 = self.__rowiseMeanShapesNormal
 
         fig, axs = plt.subplots(1, 2)
-        axs[0].plot(nbVars1, y1, label="Normal")
-        axs[0].plot(nbVars2, y2, label="Parallèle")
+        axs[0].scatter(nbVars1, y1, label="Normal")
+        axs[0].scatter(nbVars2, y2, label="Parallèle")
         axs[0].legend()
         axs[0].xlabel = "Nombre de variables [-]"
-        axs[1].plot(nbTimeSteps1, y1, label="Normal")
-        axs[1].plot(nbTimeSteps2, y2, lable="Parallèle")
+        axs[1].scatter(nbTimeSteps1, y1, label="Normal")
+        axs[1].scatter(nbTimeSteps2, y2, lable="Parallèle")
         axs[0].legend()
         axs[1].xlabel = "Nombre de pas de temps [-]"
         axs[0].ylabel = f"Moyenne temps (sur {nbRuns} exécutions pour normal, {nbRuns2} pour parallèle) [s]"
@@ -288,9 +290,9 @@ class BenchmarkStatsComparisonBase:
 
     def plotTimeFctTauMaxComparison(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__normalTaus.columns) - 1
-        plt.plot(self.__rowiseMeanTausNormal)
+        plt.scatter(self.__rowiseMeanTausNormal)
         nbRuns2 = len(self.__parTaus.columns) - 1
-        plt.plot(self.__rowiseMeanTausPar)
+        plt.scatter(self.__rowiseMeanTausPar)
         plt.xlabel(r"$\tau_{max}$ [-]")
         plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions pour normal, {nbRuns2} pour parallèle) [s]")
         if savefig:
@@ -336,14 +338,14 @@ if __name__ == '__main__':
     data = np.load(path).T
 
     b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"))
-    b.start(3, shapes, taus, datashape)
+    b.start(1, shapes, taus, datashape)
 
     bstats = BenchmarkStats(b)
     bstats.plotTimeFctShape(False, True)
     bstats.plotTimeFctTauMax(False, True)
 
     bPar = Benchmark(data, True, ("shapes.txt", "tauMax.txt"))
-    bPar.start(3, shapes, taus, datashape)
+    bPar.start(1, shapes, taus, datashape)
 
     bstats = BenchmarkStats(bPar)
     bstats.plotTimeFctShape(False, True, "tempsFonctionTau_par.png")
@@ -352,4 +354,3 @@ if __name__ == '__main__':
     comp = BenchmarkStatsComparisonFromFiles("par_shapes.txt", "par_tauMax.txt", "shapes.txt", "tausMax.txt")
     comp.plotTimeFctTauMaxComparison(False)
     comp.plotTimeFctShapeComparison(False)
-
