@@ -123,7 +123,7 @@ class Benchmark:
         self.__shapeTimes = np.zeros((nbShapes, nbRuns), dtype=float)
         for i, col in enumerate(self.__columns):
             print(f"{'=' * 5} Starting {col} {'=' * 5}")
-            if not self.__skipShapes
+            if not self.__skipShapes:
                 self.__shapeImpact(shapes, self.__shapeTimes[:, i], tau_max)
             self.__tau_maxImpact(taus, dataShape, self.__tauTimes[:, i])
             print(f"{'=' * 5} Ending {col} {'=' * 5}")
