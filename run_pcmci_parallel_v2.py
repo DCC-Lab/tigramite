@@ -38,7 +38,7 @@ class PCMCI_Parallel:
             parents_of_var = pcmci_var.run_pc_stable_singleVar(variable, tau_min=self.__tau_min, tau_max=self.__tau_max,
                                                                pc_alpha=self.__pc_alpha,
                                                                selected_links=self.__allSelectedLinks)
-            print(f"PC algo done for var {variable}, time {time.time() - start} s")
+            #print(f"PC algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var])
         return out
 
@@ -71,7 +71,7 @@ class PCMCI_Parallel:
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
-        print(f"PCs done: {time.time() - start} s")
+        #print(f"PCs done: {time.time() - start} s")
 
         for elem in pc_output:
             for innerElem in elem:
@@ -81,7 +81,7 @@ class PCMCI_Parallel:
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
-        print(f"MCIs done: {time.time() - start}")
+        #print(f"MCIs done: {time.time() - start}")
         for out in output:
             self.allTuples.extend(out[1])
 

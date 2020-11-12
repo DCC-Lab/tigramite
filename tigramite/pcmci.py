@@ -799,7 +799,7 @@ class PCMCI():
                                                pc_alpha=pc_alpha_here,
                                                max_conds_dim=max_conds_dim,
                                                max_combinations=max_combinations)
-                print(f"PC algo done for var {j}, time {time.time() - start} s")
+                # print(f"PC algo done for var {j}, time {time.time() - start} s")
                 # Figure out the best score if there is more than one pc_alpha
                 # value
                 if select_optimal_alpha:
@@ -1832,7 +1832,7 @@ class PCMCI():
                                          pc_alpha=pc_alpha,
                                          max_conds_dim=max_conds_dim,
                                          max_combinations=max_combinations)
-        print(f"PCs done: {time.time() - start} s")
+        # print(f"PCs done: {time.time() - start} s")
         # Get the results from run_mci, using the parents as the input
         start = time.time()
         results = self.run_mci(selected_links=selected_links,
@@ -1841,7 +1841,7 @@ class PCMCI():
                                parents=all_parents,
                                max_conds_py=max_conds_py,
                                max_conds_px=max_conds_px)
-        print(f"MCIs done: {time.time() - start}")
+        # print(f"MCIs done: {time.time() - start}")
         # Get the values and p-values
         val_matrix = results['val_matrix']
         p_matrix = results['p_matrix']
