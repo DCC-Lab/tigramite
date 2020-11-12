@@ -13,7 +13,8 @@ import typing
 
 class Benchmark:
 
-    def __init__(self, data: np.ndarray, parallel: bool = False, savefileNames: tuple = ("shapes.txt", "tauMax.txt")):
+    def __init__(self, data: np.ndarray, parallel: bool = False, savefileNames: tuple = ("shapes.txt", "tauMax.txt"),
+                 skipShapes: bool = False):
         self.__data = data
         self.__parallel = parallel
         self.__tauTimes = None
@@ -24,6 +25,7 @@ class Benchmark:
         self.__saveFnames = savefileNames
         self.__shapesDataframe = None
         self.__tausDataframe = None
+        self.__skipShapes = skipShapes
 
     def __noBenchmarkDoneWarning(self):
         warn.warn("No benchmark done. Please run with `start` method.")
@@ -121,7 +123,8 @@ class Benchmark:
         self.__shapeTimes = np.zeros((nbShapes, nbRuns), dtype=float)
         for i, col in enumerate(self.__columns):
             print(f"{'=' * 5} Starting {col} {'=' * 5}")
-            self.__shapeImpact(shapes, self.__shapeTimes[:, i], tau_max)
+            if not self.__skipShapes
+                self.__shapeImpact(shapes, self.__shapeTimes[:, i], tau_max)
             self.__tau_maxImpact(taus, dataShape, self.__tauTimes[:, i])
             print(f"{'=' * 5} Ending {col} {'=' * 5}")
 
@@ -202,7 +205,7 @@ class BaseBenchmarkStats:
 
     def plotTimeFctTauMax(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__dataframeTaus.columns) - 1
-        plt.scatter(self.__rowiseMeanTaus)
+        plt.scatter(*self.__rowiseMeanTaus.T)
         plt.xlabel(r"$\tau_{max}$ [-]")
         plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions) [s]")
         if savefig:
@@ -290,9 +293,9 @@ class BenchmarkStatsComparisonBase:
 
     def plotTimeFctTauMaxComparison(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__normalTaus.columns) - 1
-        plt.scatter(self.__rowiseMeanTausNormal)
+        plt.scatter(*self.__rowiseMeanTausNormal.T)
         nbRuns2 = len(self.__parTaus.columns) - 1
-        plt.scatter(self.__rowiseMeanTausPar)
+        plt.scatter(*self.__rowiseMeanTausPar.T)
         plt.xlabel(r"$\tau_{max}$ [-]")
         plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions pour normal, {nbRuns2} pour parallèle) [s]")
         if savefig:
@@ -341,7 +344,7 @@ if __name__ == '__main__':
     b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"))
     b.start(1, shapes, taus, datashape)
 
-    bstats = BenchmarkStats(b)
+    bstats = BenchmarkStatsFromFiles("shapes.txt", "tauMax.txt")
     bstats.plotTimeFctShape(False, True)
     bstats.plotTimeFctTauMax(False, True)
 
