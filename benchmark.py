@@ -205,7 +205,7 @@ class BaseBenchmarkStats:
 
     def plotTimeFctTauMax(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__dataframeTaus.columns) - 1
-        plt.scatter(*self.__rowiseMeanTaus.T)
+        plt.scatter(*self.__rowiseMeanTaus)
         plt.xlabel(r"$\tau_{max}$ [-]")
         plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions) [s]")
         if savefig:
@@ -293,9 +293,9 @@ class BenchmarkStatsComparisonBase:
 
     def plotTimeFctTauMaxComparison(self, show: bool = True, savefig: bool = True, figname: str = None):
         nbRuns = len(self.__normalTaus.columns) - 1
-        plt.scatter(*self.__rowiseMeanTausNormal.T)
+        plt.scatter(*self.__rowiseMeanTausNormal)
         nbRuns2 = len(self.__parTaus.columns) - 1
-        plt.scatter(*self.__rowiseMeanTausPar.T)
+        plt.scatter(*self.__rowiseMeanTausPar)
         plt.xlabel(r"$\tau_{max}$ [-]")
         plt.ylabel(f"Moyenne temps (sur {nbRuns} exécutions pour normal, {nbRuns2} pour parallèle) [s]")
         if savefig:
@@ -341,7 +341,7 @@ if __name__ == '__main__':
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
 
-    b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"))
+    b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"), True)
     b.start(1, shapes, taus, datashape)
 
     bstats = BenchmarkStatsFromFiles("shapes.txt", "tauMax.txt")
