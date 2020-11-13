@@ -38,7 +38,7 @@ class PCMCI_Parallel:
             parents_of_var = pcmci_var.run_pc_stable_singleVar(variable, tau_min=self.__tau_min, tau_max=self.__tau_max,
                                                                pc_alpha=self.__pc_alpha,
                                                                selected_links=self.__allSelectedLinks)
-            #print(f"PC algo done for var {variable}, time {time.time() - start} s")
+            # print(f"PC algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var])
         return out
 
@@ -47,14 +47,13 @@ class PCMCI_Parallel:
         currentAllTuples = []
         # stuff = stuff[0]
         for variable, pcmci_var, parents_of_var in stuff:
-
             # print(variable)
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             start = time.time()
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
-            # print(f"MCI algo done for var {variable}, time {time.time() - start} s")
+            print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             currentAllTuples.extend(pcmci_var.allTuples)
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
         return out, currentAllTuples
@@ -71,7 +70,7 @@ class PCMCI_Parallel:
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
-        #print(f"PCs done: {time.time() - start} s")
+        # print(f"PCs done: {time.time() - start} s")
 
         for elem in pc_output:
             for innerElem in elem:
@@ -81,7 +80,7 @@ class PCMCI_Parallel:
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
-        #print(f"MCIs done: {time.time() - start}")
+        print(f"MCIs done: {time.time() - start}")
         for out in output:
             self.allTuples.extend(out[1])
 
@@ -102,17 +101,30 @@ if __name__ == '__main__':
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
-    data = data[:440, :10]
+    data = data[:440, :100]
 
     pcmci = PCMCI(pp.DataFrame(data), ParCorr())
     start = time.time()
-    pcmci.run_pcmci(tau_min=1, tau_max=5, pc_alpha=0.01)
+    results = pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
     # print(pcmci.all_parents)
     print(f"Total time: {time.time() - start}")
-    pcmci_par = PCMCI_Parallel(data, 1, 5, 0.01)
+    pcmci_par = PCMCI_Parallel(data, 0, 5, 0.01)
     start = time.time()
     pcmci_par.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
     print(sorted(pcmci.allTuples) == sorted(pcmci_par.allTuples))
     print(sorted(pcmci_par.all_parents) == sorted(pcmci.all_parents))
+
+    # print(pcmci.all_parents)
+    # p_val = results["p_matrix"]
+    # import matplotlib.pyplot as plt
+    #
+    # fig, axes = plt.subplots(2, 3)
+    # currSlice = 0
+    # for row in range(2):
+    #     for col in range(3):
+    #         axes[row, col % 3].imshow(p_val[:, :, currSlice])
+    #         axes[row, col % 3].set_title(rf"$\tau$ = {-currSlice}")
+    #         currSlice += 1
+    # plt.show()

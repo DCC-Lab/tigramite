@@ -1841,7 +1841,7 @@ class PCMCI():
                                parents=all_parents,
                                max_conds_py=max_conds_py,
                                max_conds_px=max_conds_px)
-        # print(f"MCIs done: {time.time() - start}")
+        print(f"MCIs done: {time.time() - start}")
         # Get the values and p-values
         val_matrix = results['val_matrix']
         p_matrix = results['p_matrix']
