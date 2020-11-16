@@ -87,22 +87,22 @@ class PCMCI_Parallel:
         -------
         out: A list
             A list containing a list for each variable used in this method. Each list has the current variable, its
-            PCMCI object and its parents.
+            PCMCI object and its PC output.
         """
         out = []
         pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test)
         for variable in variables:
-            parents_of_var = pcmci_var._run_pc_stable_single(variable, tau_min=self.__tau_min, tau_max=self.__tau_max,
-                                                             pc_alpha=self.__pc_alpha,
-                                                             selected_links=self.__allSelectedLinks)
-            out.append([variable, pcmci_var, parents_of_var])
+            pc_output = pcmci_var._run_pc_stable_single(variable, tau_min=self.__tau_min, tau_max=self.__tau_max,
+                                                        pc_alpha=self.__pc_alpha,
+                                                        selected_links=self.__allSelectedLinks[variable])
+            out.append([variable, pcmci_var, pc_output])
         return out
 
     def run_mci_parallel_singleVar(self, stuff):
         """
         Parameters
         ----------
-        stuff: A list
+        stuff: A list (TODO: Rename param!!)
             A list containg a list for each variable on which the MCI algorithm will be performed. Each list
             must contain the current variable, the current variable's PCMCI object and the current variable's parents.
 
@@ -110,16 +110,16 @@ class PCMCI_Parallel:
         -------
         out: A list
             Returns a list containing a list for each variable on which the MCI algorithm was performed. Each list
-            contain the variable, its PCMCI object, its parents and its specific val_matrix and p_matrix
+            contain the variable, its PCMCI object, its PC output and its specific val_matrix and p_matrix
             (see ``run_mci`` in the ``PCMCI`` class for more info about val_matrix and p_matrix)
         """
         out = []
-        for variable, pcmci_var, parents_of_var in stuff:
+        for variable, pcmci_var, pc_output in stuff:
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
-            out.append([variable, pcmci_var, parents_of_var, results_in_var])
+            out.append([variable, pcmci_var, pc_output, results_in_var])
         return out
 
     def start(self, nbWorkers: int = None):
@@ -131,16 +131,24 @@ class PCMCI_Parallel:
         if nbWorkers > self.__nbVar:
             nbWorkers = self.__nbVar
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
-        with mp.Pool(nbWorkers) as pool:
-            pc_output = pool.map(self.run_pc_stable_parallel_on_selected_variables, splittedJobs)
-
-        for elem in pc_output:
-            for innerElem in elem:
-                self.all_parents.update(innerElem[-1])
-        pc_output = self.split(pc_output, nbWorkers)
 
         with mp.Pool(nbWorkers) as pool:
-            output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
+            pc_output_temp = pool.map(self.run_pc_stable_parallel_on_selected_variables, splittedJobs)
+        pc_outputs = []
+        for process in pc_output_temp:
+            pc_outputs.extend(process)
+
+        for pc_output in pc_outputs:
+            currentVar = pc_output[0]
+            infoDict = pc_output[-1]
+            self.all_parents[currentVar] = infoDict["parents"]
+            self.pval_max[currentVar] = infoDict["pval_max"]
+            self.val_min[currentVar] = infoDict["val_min"]
+
+        pc_outputs = self.split(pc_outputs, nbWorkers)
+
+        with mp.Pool(nbWorkers) as pool:
+            output = pool.map(self.run_mci_parallel_singleVar, pc_outputs)
 
         return output
 
@@ -172,8 +180,9 @@ if __name__ == '__main__':
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
     print(sorted(pcmci_par.all_parents) == sorted(pcmci.all_parents))
+    print(sorted(pcmci_par.pval_max) == sorted(pcmci.pval_max))
+    print(sorted(pcmci_par.val_min) == sorted(pcmci.val_min))
 
-    print(pcmci.all_parents)
     p_val = results["p_matrix"]
     import matplotlib.pyplot as plt
 
