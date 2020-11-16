@@ -29,19 +29,24 @@ class ParallelVsNormalTest:
         pcmci_par.start()
         self.__normalAllParents = sorted(pcmci_norm.all_parents)
         self.__parallelAllParents = sorted(pcmci_par.all_parents)
-        self.__normalMCITuples = sorted(pcmci_norm.allTuples)
-        self.__parallelMCITuples = sorted(pcmci_par.allTuples)
+        self.__normalPValMax = sorted(pcmci_norm.pval_max)
+        self.__parallelPValMax = sorted(pcmci_par.pval_max)
+        self.__normalValMin = sorted(pcmci_norm.val_min)
+        self.__parallelValMin = sorted(pcmci_par.val_min)
 
     def compareAllParentsAndMCITuples(self, saveDiffToFile: bool = True, diffFilename: str = None):
         if self.__normalAllParents is None or self.__parallelAllParents is None:
             raise ValueError("Nothing to compare. Please run both methods.")
         sameParents = self.__normalAllParents == self.__parallelAllParents
-        sameMCITuples = self.__normalMCITuples == self.__parallelMCITuples
+        samePValMax = self.__normalPValMax == self.__parallelPValMax
+        sameValMin = self.__normalValMin == self.__parallelValMin
         diff = ""
         if not sameParents:
             diff += f"Sequential parents:\n{self.__normalAllParents}\nParallel parents:\n{self.__parallelAllParents}"
-        if not sameMCITuples:
-            diff += f"Sequential mci tuples:\n{self.__normalMCITuples}\nParallel mci tuples:\n{self.__normalMCITuples}"
+        if not samePValMax:
+            diff += f"Sequential max pvals:\n{self.__normalPValMax}\nParallel max pvals:\n{self.__normalPValMax}"
+        if not sameValMin:
+            diff += f"Sequential min vals:\n{self.__normalValMin}\nParallel min vals:\n{self.__parallelValMin}"
         if diff != "":
             if saveDiffToFile:
                 if diffFilename is None:
@@ -51,7 +56,7 @@ class ParallelVsNormalTest:
                 with open(diffFilename, "w") as f:
                     f.write(diff)
             print(diff)
-        return sameParents and sameMCITuples
+        return sameParents and samePValMax
 
 
 class MultipleParallelVsNormalTests:
@@ -81,13 +86,14 @@ class MultipleParallelVsNormalTests:
 
 if __name__ == '__main__':
     cond_ind_test = ParCorr()
-    tau_max, tau_min = 5, 1
+    tau_max, tau_min = 5, 0
     pc_alpha = 0.01
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
     shapes = [(50, 10), (100, 10), (200, 10), (300, 10), (400, 10), (440, 10), (50, 20), (100, 20), (200, 20),
-              (300, 20), (400, 20), (440, 20), (50, 40), (100, 40), (200, 40), (300, 40), (400, 40), (440, 40)]
+              (300, 20), (400, 20), (440, 20), (50, 40), (100, 40), (200, 40), (300, 40), (400, 40), (440, 40),
+              (440, 400)]
     allData = [data[:shape[0], :shape[1]] for shape in shapes]
     m = MultipleParallelVsNormalTests(allData, cond_ind_test, tau_min, tau_max, pc_alpha)
     m.runAllForBoth()
