@@ -22,7 +22,8 @@ class ParallelVsNormalTest:
     def runForBoth(self):
         dataframe = pp.DataFrame(self.__data)
         pcmci_norm = PCMCI(dataframe, self.__cond_ind_test)
-        pcmci_par = run_pcmci_parallel_v2.PCMCI_Parallel(self.__data, self.__tau_min, self.__tau_max, self.__pc_alpha)
+        pcmci_par = run_pcmci_parallel_v2.PCMCI_Parallel(self.__data, ParCorr(), self.__tau_min, self.__tau_max,
+                                                         self.__pc_alpha)
         print("==== Running normal PCMCI ====")
         pcmci_norm.run_pcmci(None, self.__tau_min, self.__tau_max, pc_alpha=self.__pc_alpha)
         print("==== Running parallel PCMCI ====")
