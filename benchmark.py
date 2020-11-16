@@ -341,20 +341,20 @@ if __name__ == '__main__':
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
 
-    b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"), True)
-    b.start(1, shapes, taus, datashape)
+    # b = Benchmark(data, False, ("shapes.txt", "tauMax.txt"), True)
+    # b.start(1, shapes, taus, datashape)
+    #
+    # bstats = BenchmarkStatsFromFiles("shapes.txt", "tauMax.txt")
+    # bstats.plotTimeFctShape(False, True)
+    # bstats.plotTimeFctTauMax(False, True)
 
-    bstats = BenchmarkStatsFromFiles("shapes.txt", "tauMax.txt")
-    bstats.plotTimeFctShape(False, True)
-    bstats.plotTimeFctTauMax(False, True)
-
-    bPar = Benchmark(data, True, ("shapes.txt", "tauMax.txt"))
+    bPar = Benchmark(data, True, ("shapes2.txt", "tauMax2.txt"))
     bPar.start(1, shapes, taus, datashape)
 
     bstats = BenchmarkStats(bPar)
-    bstats.plotTimeFctShape(False, True, "tempsFonctionTau_par.png")
-    bstats.plotTimeFctTauMax(False, True, "tempsFonctionShape_par.png")
+    # bstats.plotTimeFctShape(False, True, "tempsFonctionTau_par.png")
+    # bstats.plotTimeFctTauMax(False, True, "tempsFonctionShape_par.png")
 
-    comp = BenchmarkStatsComparisonFromFiles("par_shapes.txt", "par_tauMax.txt", "shapes.txt", "tausMax.txt")
-    comp.plotTimeFctTauMaxComparison(False)
-    comp.plotTimeFctShapeComparison(False)
+    # comp = BenchmarkStatsComparisonFromFiles("par_shapes.txt", "par_tauMax.txt", "shapes.txt", "tausMax.txt")
+    # comp.plotTimeFctTauMaxComparison(False)
+    # comp.plotTimeFctShapeComparison(False)
