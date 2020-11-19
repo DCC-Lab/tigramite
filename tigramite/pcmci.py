@@ -1135,7 +1135,7 @@ class PCMCI():
                                                    max_conds_py,
                                                    max_conds_px):
             currentTuple = (j, i, tau, Z)
-            print(currentTuple)
+            # print(currentTuple)
             self.allTuples.append(currentTuple)
             # start = time.time()
             # Set X and Y (for clarity of code)
