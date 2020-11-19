@@ -87,8 +87,6 @@ class PCMCI_Parallel:
         for out in output:
             self.allTuples.extend(out[1])
             for index, innerOut in enumerate(out[0]):
-                if index == 0:
-                    print(innerOut[-1]["p_matrix"])
                 pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
                 valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
                 # print(innerOut[-1]["p_matrix"])
@@ -215,14 +213,14 @@ if __name__ == '__main__':
     # print(sorted(pcmci_par2.all_parents.items()))
 
     # print(pcmci.all_parents)
-    # p_val = results["p_matrix"]
-    # import matplotlib.pyplot as plt
-    #
-    # fig, axes = plt.subplots(2, 3)
-    # currSlice = 0
-    # for row in range(2):
-    #     for col in range(3):
-    #         axes[row, col % 3].imshow(p_val[:, :, currSlice])
-    #         axes[row, col % 3].set_title(rf"$\tau$ = {-currSlice}")
-    #         currSlice += 1
-    # plt.show()
+    p_val = results_pcmci["p_matrix"]
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(2, 3)
+    currSlice = 0
+    for row in range(2):
+        for col in range(3):
+            axes[row, col % 3].imshow(p_val[:, :, currSlice])
+            axes[row, col % 3].set_title(rf"$\tau$ = {-currSlice}")
+            currSlice += 1
+    plt.show()
