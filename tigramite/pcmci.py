@@ -644,8 +644,8 @@ class PCMCI():
             raise ValueError("maximum condition dimension must be >= 0")
         return max_conds_dim
 
-    def run_pc_stable_singleVar(self, selectedVar, selected_links=None, tau_min=1, tau_max=1, save_iterations=False,
-                                pc_alpha=0.2, max_conds_dim=None, max_combinations=1):
+    def run_pc_stable_single_var(self, selectedVar, selected_links=None, tau_min=1, tau_max=1, save_iterations=False,
+                                 pc_alpha=0.2, max_conds_dim=None, max_combinations=1):
         _int_pc_alpha = deepcopy(pc_alpha)
         # Check if we are selecting an optimal alpha value
         select_optimal_alpha = True
@@ -681,6 +681,7 @@ class PCMCI():
         # Set the maximum condition dimension
         max_conds_dim = self._set_max_condition_dim(max_conds_dim,
                                                     tau_min, tau_max)
+
         results = self._run_pc_stable_single(selectedVar,
                                              selected_links=_int_sel_links[selectedVar],
                                              tau_min=tau_min,
@@ -689,8 +690,7 @@ class PCMCI():
                                              pc_alpha=_int_pc_alpha[0],
                                              max_conds_dim=max_conds_dim,
                                              max_combinations=max_combinations)
-        parents = {selectedVar: results["parents"]}
-        return parents
+        return results
 
     def run_pc_stable(self,
                       selected_links=None,
@@ -1135,6 +1135,7 @@ class PCMCI():
                                                    max_conds_py,
                                                    max_conds_px):
             currentTuple = (j, i, tau, Z)
+            print(currentTuple)
             self.allTuples.append(currentTuple)
             # start = time.time()
             # Set X and Y (for clarity of code)
