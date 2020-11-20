@@ -53,8 +53,8 @@ class ParallelVsNormalTest:
         sameParents = self.__normalAllParents == self.__parallelAllParents
         samePValMax = self.__normalPValMax == self.__parallelPValMax
         sameValMin = self.__normalValMin == self.__parallelValMin
-        sameMCIPValMatrix = np.array_equal(self.__parallelPValMatrix, self.__normalPValMatrix)
-        sameMCIValMatrix = np.array_equal(self.__parallelValMatrix, self.__normalValMatrix)
+        sameMCIPValMatrix = np.allclose(self.__parallelPValMatrix, self.__normalPValMatrix, 1e-13, 1e-13)
+        sameMCIValMatrix = np.allclose(self.__parallelValMatrix, self.__normalValMatrix, 1e-13, 1e-13)
         diff = ""
         if not sameParents:
             diff += f"Sequential parents:\n{self.__normalAllParents}\nParallel parents:\n{self.__parallelAllParents}"
