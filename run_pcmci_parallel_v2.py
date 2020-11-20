@@ -11,6 +11,97 @@ import multiprocessing as mp
 import time
 
 
+class PCMCI_Parallel_variant:
+    def __init__(self, data: np.ndarray, cond_indep_test: object = ParCorr(), tau_min: int = 0, tau_max: int = 5,
+                 pc_alpha: float = 0.01):
+        self.__nbVar = data.shape[-1]
+        self.__data = data
+        self.__cond_ind_test = cond_indep_test
+        self.__tau_max = tau_max
+        self.__tau_min = tau_min
+        self.__pc_alpha = pc_alpha
+        self.all_parents = {}
+        self.val_min = {}
+        self.pval_max = {}
+        pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test)
+        self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, False)
+        self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
+        self.allTuples = []
+
+    @staticmethod
+    def split(container, count):
+        container = tuple(container)
+        return [container[i::count] for i in range(count)]
+
+    def run_pc_stable_parallel_single_variable(self, variables):
+        out = []
+        pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test)
+        allparents = []
+        allpvals = []
+        allvals = []
+        for variable in variables:
+            start = time.time()
+            results = pcmci_var.run_pc_stable_single_var(variable, tau_min=self.__tau_min, tau_max=self.__tau_max,
+                                                         pc_alpha=self.__pc_alpha,
+                                                         selected_links=self.__allSelectedLinks)
+            # print(f"PC algo done for var {variable}, time {time.time() - start} s")
+            out.append([variable, pcmci_var])
+            allparents.append({variable: results["parents"]})
+            allvals.append({variable: results["val_min"]})
+            allpvals.append({variable: results["pval_max"]})
+        return out, allparents, allvals, allpvals
+
+    def run_mci_parallel_singleVar(self, stuff):
+        out = []
+        # stuff = stuff[0]
+        # print(len(stuff), "\t", time.time())
+        # print(stuff)
+        for out in stuff:
+            print(out)
+            variable = out[0]
+            pcmci_var = out[-1]
+            currentSelectedLinks = self.__currentSelectedLinks.copy()
+            currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
+            results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
+                                               selected_links=currentSelectedLinks)
+            out.append([variable, pcmci_var, results_in_var])
+        return out
+
+    def start(self, nbWorkers: int = None):
+        if nbWorkers is None:
+            nbWorkers = mp.cpu_count()
+        if nbWorkers > mp.cpu_count():
+            nbWorkers = mp.cpu_count()
+
+        if nbWorkers > self.__nbVar:
+            nbWorkers = self.__nbVar
+        splittedJobs = self.split(range(self.__nbVar), nbWorkers)
+
+        with mp.Pool(nbWorkers) as pool:
+            pc_output = pool.map(self.run_pc_stable_parallel_single_variable, splittedJobs)
+        for elem in pc_output:
+            allParents = elem[1]
+            allValMins = elem[2]
+            allPValMaxs = elem[3]
+            self.all_parents.update({key: parent[key] for parent in allParents for key in parent})
+            self.val_min.update({key: valmin[key] for valmin in allValMins for key in valmin})
+            self.pval_max.update({key: pvalmax[key] for pvalmax in allPValMaxs for key in pvalmax})
+
+        pc_output = self.split(pc_output, nbWorkers)
+
+        with mp.Pool(nbWorkers) as pool:
+            output = pool.map(self.run_mci_parallel_singleVar, pc_output)
+        pmatrix = np.ones((self.__nbVar, self.__nbVar, self.__tau_max + 1))
+        valmatrix = pmatrix.copy()
+        confMatrix = None
+        for out in output:
+            for index, innerOut in enumerate(out):
+                pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
+                valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
+                # print(innerOut[-1]["p_matrix"])
+        return {"val_matrix": valmatrix, "p_matrix": pmatrix}
+
+
 class PCMCI_Parallel:
     def __init__(self, data: np.ndarray, cond_indep_test: object = ParCorr(), tau_min: int = 0, tau_max: int = 5,
                  pc_alpha: float = 0.01):
@@ -37,25 +128,26 @@ class PCMCI_Parallel:
         out = []
         pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test)
         for variable in variables:
-            start = time.time()
+            pcstart = time.time()
             results = pcmci_var.run_pc_stable_single_var(variable, tau_min=self.__tau_min, tau_max=self.__tau_max,
                                                          pc_alpha=self.__pc_alpha,
                                                          selected_links=self.__allSelectedLinks)
-            # print(f"PC algo done for var {variable}, time {time.time() - start} s")
+            print(f"PC algo done for var {variable}, time {time.time() - pcstart} s")
             out.append([variable, pcmci_var, results])
         return out
 
     def run_mci_parallel_singleVar(self, stuff):
         out = []
         currentAllTuples = []
-        # stuff = stuff[0]
         for variable, pcmci_var, pc_output in stuff:
+            mciStart = time.time()
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
-            currentAllTuples.extend(pcmci_var.allTuples)
             out.append([variable, pcmci_var, pc_output, results_in_var])
+            currentAllTuples.extend(pcmci_var.allTuples)
+            print(f"MCI done for var {variable} : {time.time() - mciStart}s")
         return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
@@ -67,29 +159,38 @@ class PCMCI_Parallel:
         if nbWorkers > self.__nbVar:
             nbWorkers = self.__nbVar
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
-
+        allPCs = time.time()
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_single_variable, splittedJobs)
+        print(f"All PCs done : {time.time() - allPCs}")
+        pc_outputFlat = []
 
+        beforeFlat = time.time()
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update({innerElem[0]: innerElem[-1]["parents"]})
                 self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
                 self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
-
-        pc_output = self.split(pc_output, nbWorkers)
-
+                pc_outputFlat.append(innerElem)
+        print(len(pc_outputFlat))
+        print(f"Flatterning output + info dicts : {time.time() - beforeFlat}s")
+        pc_output = self.split(pc_outputFlat, nbWorkers)
+        print(len(pc_output))
+        allMCIs = time.time()
         with mp.Pool(nbWorkers) as pool:
-            output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
+            output = pool.map(self.run_mci_parallel_singleVar, pc_output)
+        print(f"All MCIs done : {time.time() - allMCIs}")
         pmatrix = np.ones((self.__nbVar, self.__nbVar, self.__tau_max + 1))
         valmatrix = pmatrix.copy()
         confMatrix = None
+        beforeMatrices = time.time()
         for out in output:
             self.allTuples.extend(out[1])
             for index, innerOut in enumerate(out[0]):
                 pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
                 valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
                 # print(innerOut[-1]["p_matrix"])
+        print(f"Final info matrices done : {time.time() - beforeMatrices}s")
         return {"val_matrix": valmatrix, "p_matrix": pmatrix}
 
 
@@ -159,6 +260,7 @@ class PCMCI_Parallel2:
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update({innerElem[0]: innerElem[-1]["parents"]})
+            print(len(elem))
         # print(self.all_parents)
         pc_output = self.split(pc_output, nbWorkers)
         start = time.time()
@@ -186,41 +288,10 @@ if __name__ == '__main__':
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
-    data = data[:440, :10]
+    data = data[:440, :100]
 
-    pcmci = PCMCI(pp.DataFrame(data), ParCorr())
-    start = time.time()
-    results_pcmci = pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
-    # print(pcmci.all_parents)
-    print(f"Total time: {time.time() - start}")
     pcmci_par = PCMCI_Parallel(data, ParCorr(), 0, 5, 0.01)
     start = time.time()
     results_pcmci_par = pcmci_par.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
-    print(sorted(pcmci.allTuples) == sorted(pcmci_par.allTuples))
-
-    print(pcmci_par.all_parents == pcmci.all_parents)
-    print(pcmci_par.val_min == pcmci.val_min)
-    print(pcmci_par.pval_max == pcmci.pval_max)
-    val_matrix_normal = results_pcmci["val_matrix"]
-    val_matrix_par = results_pcmci["val_matrix"]
-    pval_matrix_normal = results_pcmci["p_matrix"]
-    pval_matrix_par = results_pcmci["p_matrix"]
-    print(np.array_equal(val_matrix_normal, val_matrix_par))
-    print(np.array_equal(pval_matrix_normal, pval_matrix_par))
-    # print(sorted(pcmci.all_parents.items()))
-    # print(sorted(pcmci_par2.all_parents.items()))
-
-    # print(pcmci.all_parents)
-    p_val = results_pcmci["p_matrix"]
-    import matplotlib.pyplot as plt
-
-    fig, axes = plt.subplots(2, 3)
-    currSlice = 0
-    for row in range(2):
-        for col in range(3):
-            axes[row, col % 3].imshow(p_val[:, :, currSlice])
-            axes[row, col % 3].set_title(rf"$\tau$ = {-currSlice}")
-            currSlice += 1
-    plt.show()
