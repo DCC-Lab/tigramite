@@ -175,7 +175,7 @@ class PCMCI_Parallel:
         print(len(pc_outputFlat))
         print(f"Flatterning output + info dicts : {time.time() - beforeFlat}s")
         pc_output = self.split(pc_outputFlat, nbWorkers)
-        print(len(pc_output))
+        print(f"Nb splitted for MCIs : {len(pc_output)}")
         allMCIs = time.time()
         with mp.Pool(nbWorkers) as pool:
             output = pool.map(self.run_mci_parallel_singleVar, pc_output)
