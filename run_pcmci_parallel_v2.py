@@ -194,7 +194,10 @@ class PCMCI_Parallel2:
                 pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
                 valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
                 # print(innerOut[-1]["p_matrix"][:, index, :])
-
+        for elem in pc_output:
+            for innerElem in elem:
+                self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
+                self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
         return {"val_matrix": valmatrix, "p_matrix": pmatrix}
 
 
