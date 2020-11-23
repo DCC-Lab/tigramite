@@ -166,33 +166,30 @@ class PCMCI_Parallel2:
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
         print(f"PCs done: {time.time() - start} s")
-        deepC = time.time()
-        originalPcOutput = deepcopy(pc_output)
-        print(f"Deepcopy done {time.time() - deepC} s")
+
         mci_input = []
 
         for elem in pc_output:
+            mci_input.append([e[:2] for e in elem])
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
-            mci_input.append([e[:2] for e in elem])
+                self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
+                self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
 
-        pc_output = self.split(mci_input, nbWorkers)
+        mci_input = self.split(mci_input, nbWorkers)
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
-            output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
+            output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
         print(f"MCIs done: {time.time() - start}")
         pmatrix = np.ones((self.__nbVar, self.__nbVar, self.__tau_max + 1))
         valmatrix = pmatrix.copy()
         confMatrix = None
         for out in output:
-            # print(out)
             self.allTuples.extend(out[1])
             for innerOut in out[0]:
                 index = innerOut[0]
                 pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
                 valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
-                # self.val_min.update({index: innerOut[-2]["val_min"]})
-                # self.pval_max.update({index: innerOut[-2]["pval_max"]})
 
         return {"val_matrix": valmatrix, "p_matrix": pmatrix}
 
