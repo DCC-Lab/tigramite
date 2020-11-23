@@ -41,7 +41,7 @@ class PCMCI_Parallel:
             pcstart = time.time()
             results = pcmci_var.run_pc_stable_single_var(variable, tau_min=self.__tau_min, tau_max=self.__tau_max,
                                                          pc_alpha=self.__pc_alpha,
-                                                         selected_links=self.__allSelectedLinks)
+                                                         selected_links=self.__allSelectedLinks, otherReturn=True)
             print(f"PC algo done for var {variable}, time {time.time() - pcstart} s")
             out.append([variable, pcmci_var, results])
         return out
@@ -221,12 +221,12 @@ if __name__ == '__main__':
     results_pcmci_pa2r = pcmci_par2.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
-    print("Parents: ", seq_pcmci.all_parents == pcmci_par.all_parents)
-    print("All tuples: ", sorted(seq_pcmci.allTuples) == sorted(pcmci_par.allTuples))
-    print("Vals min: ", seq_pcmci.val_min == pcmci_par.val_min)
-    print("p vals max: ", seq_pcmci.pval_max == pcmci_par.pval_max)
-    print("MCI vals : ", np.allclose(results_pcmci_seq["val_matrix"], results_pcmci_par["val_matrix"], 1e-10, 1e-10))
-    print("MCI p vals : ", np.allclose(results_pcmci_seq["p_matrix"], results_pcmci_par["p_matrix"], 1e-10, 1e-10))
+    # print("Parents: ", seq_pcmci.all_parents == pcmci_par.all_parents)
+    # print("All tuples: ", sorted(seq_pcmci.allTuples) == sorted(pcmci_par.allTuples))
+    # print("Vals min: ", seq_pcmci.val_min == pcmci_par.val_min)
+    # print("p vals max: ", seq_pcmci.pval_max == pcmci_par.pval_max)
+    # print("MCI vals : ", np.allclose(results_pcmci_seq["val_matrix"], results_pcmci_par["val_matrix"], 1e-10, 1e-10))
+    # print("MCI p vals : ", np.allclose(results_pcmci_seq["p_matrix"], results_pcmci_par["p_matrix"], 1e-10, 1e-10))
     # print(results_pcmci_seq["p_matrix"])
     # print(results_pcmci_par["p_matrix"])
-    print(results_pcmci_seq["p_matrix"] - results_pcmci_par["p_matrix"])
+    # print(results_pcmci_seq["p_matrix"] - results_pcmci_par["p_matrix"])
