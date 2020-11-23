@@ -170,7 +170,7 @@ class PCMCI_Parallel2:
         mci_input = []
 
         for elem in pc_output:
-            mci_input.append([e[:2] for e in elem])
+            mci_input.append([deepcopy(e[:2]) for e in elem])
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
                 self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
