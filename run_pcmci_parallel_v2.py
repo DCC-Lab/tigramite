@@ -166,14 +166,18 @@ class PCMCI_Parallel2:
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
         print(f"PCs done: {time.time() - start} s")
+        deepC = time.time()
         originalPcOutput = deepcopy(pc_output)
+        print(f"Deepcopy done {time.time() - deepC} s")
 
+        allP = time.time()
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
                 # self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
                 # self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
         # print(self.all_parents)
+        print(f"All parents {time.time() - allP} s")
         pc_output = self.split(pc_output, nbWorkers)
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
