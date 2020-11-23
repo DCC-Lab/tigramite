@@ -110,6 +110,8 @@ class PCMCI_Parallel2:
         self.__tau_min = tau_min
         self.__pc_alpha = pc_alpha
         self.all_parents = {}
+        self.val_min = {}
+        self.pval_max = {}
         pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
         self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, True)
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
@@ -167,16 +169,27 @@ class PCMCI_Parallel2:
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update(innerElem[-1])
+                self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
+                self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
         # print(self.all_parents)
         pc_output = self.split(pc_output, nbWorkers)
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
         print(f"MCIs done: {time.time() - start}")
+        pmatrix = np.ones((self.__nbVar, self.__nbVar, self.__tau_max + 1))
+        valmatrix = pmatrix.copy()
+        confMatrix = None
         for out in output:
+            # print(out)
             self.allTuples.extend(out[1])
+            for innerOut in out[0]:
+                index = innerOut[0]
+                pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
+                valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
+                # print(innerOut[-1]["p_matrix"][:, index, :])
 
-        return output
+        return {"val_matrix": valmatrix, "p_matrix": pmatrix}
 
 
 if __name__ == '__main__':
@@ -195,23 +208,23 @@ if __name__ == '__main__':
     data = np.load(path).T
     data = data[:440, :10]
     seq_pcmci = PCMCI(pp.DataFrame(data), ParCorr())
-    #results_pcmci_seq = seq_pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
+    results_pcmci_seq = seq_pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
     pcmci_par = PCMCI_Parallel(data, ParCorr(), 0, 5, 0.01)
     start = time.time()
     results_pcmci_par = pcmci_par.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
-    pcmci_par = PCMCI_Parallel2(data, 0, 5, 0.01)
+    pcmci_par2 = PCMCI_Parallel2(data, 0, 5, 0.01)
     start = time.time()
-    results_pcmci_par = pcmci_par.start()
+    results_pcmci_pa2r = pcmci_par2.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
-    # print("Parents: ", seq_pcmci.all_parents == pcmci_par.all_parents)
-    # print("All tuples: ", sorted(seq_pcmci.allTuples) == sorted(pcmci_par.allTuples))
-    # print("Vals min: ", seq_pcmci.val_min == pcmci_par.val_min)
-    # print("p vals max: ", seq_pcmci.pval_max == pcmci_par.pval_max)
-    # print("MCI vals : ", np.allclose(results_pcmci_seq["val_matrix"], results_pcmci_par["val_matrix"], 1e-10, 1e-10))
-    # print("MCI p vals : ", np.allclose(results_pcmci_seq["p_matrix"], results_pcmci_par["p_matrix"], 1e-10, 1e-10))
+    print("Parents: ", seq_pcmci.all_parents == pcmci_par.all_parents)
+    print("All tuples: ", sorted(seq_pcmci.allTuples) == sorted(pcmci_par.allTuples))
+    print("Vals min: ", seq_pcmci.val_min == pcmci_par.val_min)
+    print("p vals max: ", seq_pcmci.pval_max == pcmci_par.pval_max)
+    print("MCI vals : ", np.allclose(results_pcmci_seq["val_matrix"], results_pcmci_par["val_matrix"], 1e-10, 1e-10))
+    print("MCI p vals : ", np.allclose(results_pcmci_seq["p_matrix"], results_pcmci_par["p_matrix"], 1e-10, 1e-10))
     # print(results_pcmci_seq["p_matrix"])
     # print(results_pcmci_par["p_matrix"])
-    # print(results_pcmci_seq["p_matrix"] - results_pcmci_par["p_matrix"])
+    print(results_pcmci_seq["p_matrix"] - results_pcmci_par["p_matrix"])
