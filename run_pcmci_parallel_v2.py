@@ -9,6 +9,7 @@ from tigramite.pcmci import PCMCI
 from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
 import multiprocessing as mp
 import time
+from copy import deepcopy
 
 
 class PCMCI_Parallel:
@@ -127,13 +128,13 @@ class PCMCI_Parallel2:
         pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
         for variable in variables:
             start = time.time()
-            parents_of_var = pcmci_var.run_pc_stable_single_var(variable, tau_min=self.__tau_min,
-                                                                tau_max=self.__tau_max,
-                                                                pc_alpha=self.__pc_alpha,
-                                                                selected_links=self.__allSelectedLinks,
-                                                                parentsOnly=False)
+            parents_of_var, otherStats = pcmci_var.run_pc_stable_single_var(variable, tau_min=self.__tau_min,
+                                                                            tau_max=self.__tau_max,
+                                                                            pc_alpha=self.__pc_alpha,
+                                                                            selected_links=self.__allSelectedLinks,
+                                                                            parentsOnly=False)
             print(f"PC algo done for var {variable}, time {time.time() - start} s")
-            out.append([variable, pcmci_var, parents_of_var])
+            out.append([variable, pcmci_var, parents_of_var, otherStats])
         return out
 
     def run_mci_parallel_singleVar(self, stuff):
@@ -165,12 +166,13 @@ class PCMCI_Parallel2:
         with mp.Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
         print(f"PCs done: {time.time() - start} s")
+        originalPcOutput = deepcopy(pc_output)
 
         for elem in pc_output:
             for innerElem in elem:
-                self.all_parents.update({innerElem[0]: innerElem[-1]["parents"]})
-                self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
-                self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
+                self.all_parents.update(innerElem[-2])
+                # self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
+                # self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
         # print(self.all_parents)
         pc_output = self.split(pc_output, nbWorkers)
         start = time.time()
