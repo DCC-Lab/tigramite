@@ -145,7 +145,7 @@ class PCMCI_Parallel2:
             start = time.time()
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
-            # print(f"MCI algo done for var {variable}, time {time.time() - start} s")
+            print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             currentAllTuples.extend(pcmci_var.allTuples)
             out.append([variable, pcmci_var, parents_of_var, results_in_var])
         return out, currentAllTuples
