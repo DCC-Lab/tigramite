@@ -168,7 +168,7 @@ class PCMCI_Parallel2:
 
         for elem in pc_output:
             for innerElem in elem:
-                self.all_parents.update({innerElem[0]: innerElem[-1]})
+                self.all_parents.update({innerElem[0]: innerElem[-1]["parents"]})
                 self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
                 self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
         # print(self.all_parents)
