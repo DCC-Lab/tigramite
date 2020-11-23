@@ -141,7 +141,7 @@ class PCMCI_Parallel2:
         out = []
         currentAllTuples = []
         # stuff = stuff[0]
-        for variable, pcmci_var, _, _ in stuff:
+        for variable, pcmci_var, _, otherStats in stuff:
             # print(variable)
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
@@ -150,7 +150,7 @@ class PCMCI_Parallel2:
                                                selected_links=currentSelectedLinks)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             currentAllTuples.extend(pcmci_var.allTuples)
-            out.append([variable, pcmci_var, results_in_var])
+            out.append([variable, pcmci_var, otherStats, results_in_var])
         return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
@@ -170,14 +170,10 @@ class PCMCI_Parallel2:
         originalPcOutput = deepcopy(pc_output)
         print(f"Deepcopy done {time.time() - deepC} s")
 
-        allP = time.time()
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
-                # self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
-                # self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
-        # print(self.all_parents)
-        print(f"All parents {time.time() - allP} s")
+
         pc_output = self.split(pc_output, nbWorkers)
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
@@ -193,11 +189,9 @@ class PCMCI_Parallel2:
                 index = innerOut[0]
                 pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
                 valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
-                # print(innerOut[-1]["p_matrix"][:, index, :])
-        for elem in pc_output:
-            for innerElem in elem:
-                self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
-                self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
+                self.val_min.update({index: innerOut[-2]["val_min"]})
+                self.pval_max.update({index: innerOut[-2]["pval_max"]})
+
         return {"val_matrix": valmatrix, "p_matrix": pmatrix}
 
 
@@ -228,12 +222,12 @@ if __name__ == '__main__':
     results_pcmci_pa2r = pcmci_par2.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
-    # print("Parents: ", seq_pcmci.all_parents == pcmci_par.all_parents)
-    # print("All tuples: ", sorted(seq_pcmci.allTuples) == sorted(pcmci_par.allTuples))
-    # print("Vals min: ", seq_pcmci.val_min == pcmci_par.val_min)
-    # print("p vals max: ", seq_pcmci.pval_max == pcmci_par.pval_max)
-    # print("MCI vals : ", np.allclose(results_pcmci_seq["val_matrix"], results_pcmci_par["val_matrix"], 1e-10, 1e-10))
-    # print("MCI p vals : ", np.allclose(results_pcmci_seq["p_matrix"], results_pcmci_par["p_matrix"], 1e-10, 1e-10))
+    print("Parents: ", seq_pcmci.all_parents == pcmci_par.all_parents)
+    print("All tuples: ", sorted(seq_pcmci.allTuples) == sorted(pcmci_par.allTuples))
+    print("Vals min: ", seq_pcmci.val_min == pcmci_par.val_min)
+    print("p vals max: ", seq_pcmci.pval_max == pcmci_par.pval_max)
+    print("MCI vals : ", np.allclose(results_pcmci_seq["val_matrix"], results_pcmci_par["val_matrix"], 1e-10, 1e-10))
+    print("MCI p vals : ", np.allclose(results_pcmci_seq["p_matrix"], results_pcmci_par["p_matrix"], 1e-10, 1e-10))
     # print(results_pcmci_seq["p_matrix"])
     # print(results_pcmci_par["p_matrix"])
     # print(results_pcmci_seq["p_matrix"] - results_pcmci_par["p_matrix"])
