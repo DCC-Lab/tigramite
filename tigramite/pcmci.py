@@ -692,7 +692,7 @@ class PCMCI():
                                              max_combinations=max_combinations)
         if otherReturn:
             return results
-        return {selectedVar: results["parents"]}, deepcopy(results)
+        return {selectedVar: results["parents"]}, results
 
     def run_pc_stable(self,
                       selected_links=None,
