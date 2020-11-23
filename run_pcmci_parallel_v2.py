@@ -141,7 +141,7 @@ class PCMCI_Parallel2:
         out = []
         currentAllTuples = []
         # stuff = stuff[0]
-        for variable, pcmci_var, _, _ in stuff:
+        for variable, pcmci_var in stuff:
             # print(variable)
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
@@ -169,12 +169,14 @@ class PCMCI_Parallel2:
         deepC = time.time()
         originalPcOutput = deepcopy(pc_output)
         print(f"Deepcopy done {time.time() - deepC} s")
+        mci_input = []
 
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
+            mci_input.extend([e[:2] for e in elem])
 
-        pc_output = self.split(pc_output, nbWorkers)
+        pc_output = self.split(mci_input, nbWorkers)
         start = time.time()
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, pc_output)
