@@ -645,7 +645,7 @@ class PCMCI():
         return max_conds_dim
 
     def run_pc_stable_single_var(self, selectedVar, selected_links=None, tau_min=1, tau_max=1, save_iterations=False,
-                                 pc_alpha=0.2, max_conds_dim=None, max_combinations=1):
+                                 pc_alpha=0.2, max_conds_dim=None, max_combinations=1, parentsOnly:bool=False):
         _int_pc_alpha = deepcopy(pc_alpha)
         # Check if we are selecting an optimal alpha value
         select_optimal_alpha = True
@@ -690,6 +690,8 @@ class PCMCI():
                                              pc_alpha=_int_pc_alpha[0],
                                              max_conds_dim=max_conds_dim,
                                              max_combinations=max_combinations)
+        if parentsOnly:
+            return {selectedVar:results["parents"]}
         return results
 
     def run_pc_stable(self,
