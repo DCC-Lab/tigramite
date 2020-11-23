@@ -170,11 +170,9 @@ class PCMCI_Parallel2:
         mci_input = []
 
         for elem in pc_output:
-            mci_input.append([deepcopy(e[:2]) for e in elem])
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
-                self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
-                self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
+            mci_input.append([e[:2] for e in elem])
 
         mci_input = self.split(mci_input, nbWorkers)
         start = time.time()
@@ -190,6 +188,11 @@ class PCMCI_Parallel2:
                 index = innerOut[0]
                 pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
                 valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
+        for pc_out in pc_output:
+            for innerOut in pc_out:
+                index = innerOut[0]
+                self.val_min.update({index: innerOut[-2]["val_min"]})
+                self.pval_max.update({index: innerOut[-2]["pval_max"]})
 
         return {"val_matrix": valmatrix, "p_matrix": pmatrix}
 
