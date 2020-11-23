@@ -131,7 +131,7 @@ class PCMCI_Parallel2:
                                                                 tau_max=self.__tau_max,
                                                                 pc_alpha=self.__pc_alpha,
                                                                 selected_links=self.__allSelectedLinks,
-                                                                parentsOnly=True)
+                                                                parentsOnly=False)
             print(f"PC algo done for var {variable}, time {time.time() - start} s")
             out.append([variable, pcmci_var, parents_of_var])
         return out
