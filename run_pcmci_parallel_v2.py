@@ -103,10 +103,10 @@ class PCMCI_Parallel:
 
 
 class PCMCI_Parallel2:
-    def __init__(self, data: np.ndarray, tau_min: int, tau_max: int, pc_alpha: float):
+    def __init__(self, data: np.ndarray, cond_ind_test, tau_min: int, tau_max: int, pc_alpha: float):
         self.__nbVar = data.shape[-1]
         self.__data = data
-        self.__cond_ind_test = ParCorr
+        self.__cond_ind_test = cond_ind_test
         self.__tau_max = tau_max
         self.__tau_min = tau_min
         self.__pc_alpha = pc_alpha
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     results_pcmci_par = pcmci_par.start()
     # print(pcmci_par.all_parents)
     print(f"Total time: {time.time() - start}")
-    pcmci_par2 = PCMCI_Parallel2(data, 0, 5, 0.01)
+    pcmci_par2 = PCMCI_Parallel2(data, ParCorr, 0, 5, 0.01)
     start = time.time()
     results_pcmci_pa2r = pcmci_par2.start()
     # print(pcmci_par.all_parents)
