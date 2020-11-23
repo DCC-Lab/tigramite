@@ -141,7 +141,7 @@ class PCMCI_Parallel2:
         out = []
         currentAllTuples = []
         # stuff = stuff[0]
-        for variable, pcmci_var, _, otherStats in stuff:
+        for variable, pcmci_var, _, _ in stuff:
             # print(variable)
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
@@ -150,7 +150,7 @@ class PCMCI_Parallel2:
                                                selected_links=currentSelectedLinks)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             currentAllTuples.extend(pcmci_var.allTuples)
-            out.append([variable, pcmci_var, otherStats, results_in_var])
+            out.append([variable, pcmci_var, results_in_var])
         return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
@@ -189,8 +189,8 @@ class PCMCI_Parallel2:
                 index = innerOut[0]
                 pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
                 valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
-                self.val_min.update({index: innerOut[-2]["val_min"]})
-                self.pval_max.update({index: innerOut[-2]["pval_max"]})
+                # self.val_min.update({index: innerOut[-2]["val_min"]})
+                # self.pval_max.update({index: innerOut[-2]["pval_max"]})
 
         return {"val_matrix": valmatrix, "p_matrix": pmatrix}
 
