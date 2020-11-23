@@ -174,7 +174,7 @@ class PCMCI_Parallel2:
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
-            mci_input.extend([e[:2] for e in elem])
+            mci_input.append([e[:2] for e in elem])
 
         pc_output = self.split(mci_input, nbWorkers)
         start = time.time()
