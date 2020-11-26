@@ -336,8 +336,9 @@ if __name__ == '__main__':
               (300, 400), (400, 400), (440, 400), (50, 800), (100, 800), (200, 800), (300, 800), (400, 800), (440, 800),
               (50, 1000), (100, 1000), (200, 1000), (300, 1000), (400, 1000), (440, 1000), (440, 2000), (440, 3000),
               (440, 4000), (440, 5000), (440, 6003)]
+    shapes = [(440, 1000), (440, 2000), (440, 3000), (440, 4000), (440, 5000), (440, 6003)]
     taus = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 100, 150]
-    datashape = (400, 20)
+    datashape = (440, 100)
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
@@ -350,7 +351,7 @@ if __name__ == '__main__':
     # bstats.plotTimeFctShape(False, True)
     # bstats.plotTimeFctTauMax(False, True)
 
-    bPar = Benchmark(data, True, ("shapes2.txt", "tauMax2.txt"))
+    bPar = Benchmark(data, True, ("shapes2_2.txt", "tauMax2.txt"))
     bPar.start(1, shapes, taus, datashape)
 
     bstats = BenchmarkStats(bPar)
