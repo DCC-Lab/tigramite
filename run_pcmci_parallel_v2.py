@@ -149,8 +149,10 @@ class PCMCI_Parallel2:
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
+            currentValVector = results_in_var["val_matrix"][:, variable, :]
+            currentPVector = results_in_var["p_matrix"][:, variable, :]
             currentAllTuples.extend(pcmci_var.allTuples)
-            out.append([variable, pcmci_var, results_in_var])
+            out.append([variable, pcmci_var, {"val_vector": currentValVector, "p_vector": currentPVector}])
         return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
@@ -186,8 +188,8 @@ class PCMCI_Parallel2:
             self.allTuples.extend(out[1])
             for innerOut in out[0]:
                 index = innerOut[0]
-                pmatrix[:, index, :] = innerOut[-1]["p_matrix"][:, index, :]
-                valmatrix[:, index, :] = innerOut[-1]["val_matrix"][:, index, :]
+                pmatrix[:, index, :] = innerOut[-1]["p_vector"]
+                valmatrix[:, index, :] = innerOut[-1]["val_vector"]
         for pc_out in pc_output:
             for innerOut in pc_out:
                 index = innerOut[0]
