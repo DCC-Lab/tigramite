@@ -44,13 +44,10 @@ class PCMCI_Parallel:
                                                          selected_links=self.__allSelectedLinks, otherReturn=True)
             print(f"PC algo done for var {variable}, time {time.time() - pcstart} s")
             out.append([variable, pcmci_var, results])
-        print(out)
         return out
 
     def run_mci_parallel_singleVar(self, *inputs):
         out = []
-        for elems in inputs:
-            print(elems)
         currentAllTuples = []
         for variable, pcmci_var, pc_output in inputs:
             mciStart = time.time()
@@ -81,7 +78,6 @@ class PCMCI_Parallel:
 
         for elem in pc_output:
             for innerElem in elem:
-                print(innerElem)
                 self.all_parents.update({innerElem[0]: innerElem[-1]["parents"]})
                 self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
                 self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
@@ -138,6 +134,7 @@ class PCMCI_Parallel2:
                                                                             selected_links=self.__allSelectedLinks,
                                                                             otherReturn=False)
             print(f"PC algo done for var {variable}, time {time.time() - start} s")
+            print([variable, pcmci_var])
             out.append([variable, pcmci_var, parents_of_var, otherStats])
         return out
 
@@ -146,7 +143,7 @@ class PCMCI_Parallel2:
         currentAllTuples = []
         # stuff = stuff[0]
         for variable, pcmci_var in stuff:
-            # print(variable)
+            print([variable, pcmci_var])
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             start = time.time()
@@ -177,6 +174,7 @@ class PCMCI_Parallel2:
 
         for elem in pc_output:
             for innerElem in elem:
+                print(innerElem[:2])
                 self.all_parents.update(innerElem[-2])
             mci_input.append([e[:2] for e in elem])
 
