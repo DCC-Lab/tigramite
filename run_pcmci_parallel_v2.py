@@ -44,10 +44,13 @@ class PCMCI_Parallel:
                                                          selected_links=self.__allSelectedLinks, otherReturn=True)
             print(f"PC algo done for var {variable}, time {time.time() - pcstart} s")
             out.append([variable, pcmci_var, results])
+        print(out)
         return out
 
     def run_mci_parallel_singleVar(self, *inputs):
         out = []
+        for elems in inputs:
+            print(elems)
         currentAllTuples = []
         for variable, pcmci_var, pc_output in inputs:
             mciStart = time.time()
@@ -78,6 +81,7 @@ class PCMCI_Parallel:
 
         for elem in pc_output:
             for innerElem in elem:
+                print(innerElem)
                 self.all_parents.update({innerElem[0]: innerElem[-1]["parents"]})
                 self.val_min.update({innerElem[0]: innerElem[-1]["val_min"]})
                 self.pval_max.update({innerElem[0]: innerElem[-1]["pval_max"]})
@@ -149,10 +153,10 @@ class PCMCI_Parallel2:
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
-            currentValVector = results_in_var["val_matrix"][:, variable, :]
-            currentPVector = results_in_var["p_matrix"][:, variable, :]
+            currentValMatrix = results_in_var["val_matrix"][:, variable, :]
+            currentPMatrix = results_in_var["p_matrix"][:, variable, :]
             currentAllTuples.extend(pcmci_var.allTuples)
-            out.append([variable, pcmci_var, {"val_vector": currentValVector, "p_vector": currentPVector}])
+            out.append([variable, pcmci_var, {"val_matrix": currentValMatrix, "p_matrix": currentPMatrix}])
         return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
@@ -188,8 +192,8 @@ class PCMCI_Parallel2:
             self.allTuples.extend(out[1])
             for innerOut in out[0]:
                 index = innerOut[0]
-                pmatrix[:, index, :] = innerOut[-1]["p_vector"]
-                valmatrix[:, index, :] = innerOut[-1]["val_vector"]
+                pmatrix[:, index, :] = innerOut[-1]["p_matrix"]
+                valmatrix[:, index, :] = innerOut[-1]["val_matrix"]
         for pc_out in pc_output:
             for innerOut in pc_out:
                 index = innerOut[0]
