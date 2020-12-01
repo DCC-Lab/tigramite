@@ -9,6 +9,7 @@ from tigramite.pcmci import PCMCI
 from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
 import multiprocessing as mp
 import time
+from scipy import sparse
 from copy import deepcopy
 
 
@@ -117,11 +118,34 @@ class PCMCI_Parallel2:
         self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, True)
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
         self.allTuples = []
+        self.__matrixStorage = os.path.join(os.getcwd(), "matrices")
+        os.mkdir(self.__matrixStorage)
 
     @staticmethod
     def split(container, count):
         container = tuple(container)
         return [container[i::count] for i in range(count)]
+
+    @staticmethod
+    def from3DArrayToHorizontal2DArray(array: np.ndarray):
+        """
+        Method used to take a 3D array of shape (N,M,T) and return it in a 2D array of shape (N, M*T).
+        :param array: Array to "flatten".
+        :return: A 2D horizontal representation of the original array.
+        """
+        return np.hstack(array.transpose((2, 0, 1)))
+
+    @staticmethod
+    def fromHorizontal2DArrayTo3DArray(array: np.ndarray, originalShape: tuple):
+        """
+        Method used to take a 2D array of shape (N, M*T) and return it in a 3D array of shape (N,M,T).
+        :param array: Array to return in 3D.
+        :return: 1 3D representation of the original array.
+        """
+        if len(originalShape) != 3:
+            raise ValueError("The original shape must be in 3D, so a tuple with 3 elements.")
+        N, M, T = originalShape
+        return np.dstack([array[:, i * M: i * M + M] for i in range(T)])
 
     def run_pc_stable_parallel_singleVariable(self, variables):
         out = []
@@ -134,29 +158,46 @@ class PCMCI_Parallel2:
                                                                             selected_links=self.__allSelectedLinks,
                                                                             otherReturn=False)
             print(f"PC algo done for var {variable}, time {time.time() - start} s")
-            print([variable, pcmci_var])
             out.append([variable, pcmci_var, parents_of_var, otherStats])
         return out
 
     def run_mci_parallel_singleVar(self, stuff):
         out = []
         currentAllTuples = []
-        # stuff = stuff[0]
+        processPValMatrix = np.ones((self.__nbVar, self.__nbVar, self.__tau_max + 1))
+        processValMatrix = np.zeros((self.__nbVar, self.__nbVar, self.__tau_max + 1))
+        pcmci_var = None
         for variable, pcmci_var in stuff:
-            print([variable, pcmci_var])
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             start = time.time()
             results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
                                                selected_links=currentSelectedLinks)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
-            currentValMatrix = results_in_var["val_matrix"][:, variable, :]
-            currentPMatrix = results_in_var["p_matrix"][:, variable, :]
+            processValMatrix[:, variable, :] = results_in_var["val_matrix"][:, variable, :]
+            processPValMatrix[:, variable, :] = results_in_var["p_matrix"][:, variable, :]
             currentAllTuples.extend(pcmci_var.allTuples)
-            out.append([variable, pcmci_var, {"val_matrix": currentValMatrix, "p_matrix": currentPMatrix}])
-        return out, currentAllTuples
+            out.append([variable, pcmci_var])
+        processPValMatrix = processPValMatrix - 1  # We add 1 later in the algo. This is purely for sparsing purpose.
+        processPValMatrix2D = self.from3DArrayToHorizontal2DArray(processPValMatrix)
+        processValMatrix2D = self.from3DArrayToHorizontal2DArray(processValMatrix)
+        sparsePVal = sparse.csr_matrix(processPValMatrix2D)
+        sparseVal = sparse.csr_matrix(processValMatrix2D)
+        savedNamePvals = os.path.join(self.__matrixStorage, f"{os.getpid()}_pvals.npz")
+        savedNameVals = os.path.join(self.__matrixStorage, f"{os.getpid()}_vals.npz")
+        sparse.save_npz(savedNamePvals, sparsePVal)
+        sparse.save_npz(savedNameVals, sparseVal)
+        return out, currentAllTuples, savedNamePvals, savedNameVals
+
+    def __clearMatrixStorage(self):
+        if os.path.exists(self.__matrixStorage):
+            allFiles = os.listdir(self.__matrixStorage)
+            for f in allFiles:
+                os.remove(os.path.join(self.__matrixStorage, f))
+            os.rmdir(self.__matrixStorage)
 
     def start(self, nbWorkers: int = None):
+
         if nbWorkers is None:
             nbWorkers = mp.cpu_count()
         if nbWorkers > mp.cpu_count():
@@ -174,7 +215,6 @@ class PCMCI_Parallel2:
 
         for elem in pc_output:
             for innerElem in elem:
-                print(innerElem[:2])
                 self.all_parents.update(innerElem[-2])
             mci_input.append([e[:2] for e in elem])
 
@@ -183,15 +223,23 @@ class PCMCI_Parallel2:
         with mp.Pool(nbWorkers) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
         print(f"MCIs done: {time.time() - start}")
-        pmatrix = np.ones((self.__nbVar, self.__nbVar, self.__tau_max + 1))
-        valmatrix = pmatrix.copy()
+        matrixShape = (self.__nbVar, self.__nbVar, self.__tau_max + 1)
         confMatrix = None
+        allSparseVal = sparse.csr_matrix(
+            self.from3DArrayToHorizontal2DArray(np.zeros((self.__nbVar, self.__nbVar, self.__tau_max + 1))))
+        allSparsePVal = allSparseVal.copy()
+
         for out in output:
             self.allTuples.extend(out[1])
-            for innerOut in out[0]:
-                index = innerOut[0]
-                pmatrix[:, index, :] = innerOut[-1]["p_matrix"]
-                valmatrix[:, index, :] = innerOut[-1]["val_matrix"]
+            savedNamePvals, savedNameVals = out[-2:]
+            allSparsePVal += sparse.load_npz(savedNamePvals)
+            allSparseVal += sparse.load_npz(savedNameVals)
+            
+        self.__clearMatrixStorage()
+        valmatrix = self.fromHorizontal2DArrayTo3DArray(allSparseVal.toarray(), matrixShape)
+        pmatrix = self.fromHorizontal2DArrayTo3DArray(allSparsePVal.toarray(), matrixShape)
+        pmatrix += 1  # Since we subtracted 1 earlier
+
         for pc_out in pc_output:
             for innerOut in pc_out:
                 index = innerOut[0]
@@ -234,6 +282,6 @@ if __name__ == '__main__':
     print("p vals max: ", pcmci_par2.pval_max == pcmci_par.pval_max)
     print("MCI vals : ", np.allclose(results_pcmci_pa2r["val_matrix"], results_pcmci_par["val_matrix"], 1e-10, 1e-10))
     print("MCI p vals : ", np.allclose(results_pcmci_pa2r["p_matrix"], results_pcmci_par["p_matrix"], 1e-10, 1e-10))
-    # print(results_pcmci_seq["p_matrix"])
     # print(results_pcmci_par["p_matrix"])
-    # print(results_pcmci_seq["p_matrix"] - results_pcmci_par["p_matrix"])
+    # print(results_pcmci_pa2r["p_matrix"])
+    # print(results_pcmci_pa2r["p_matrix"] - results_pcmci_par["p_matrix"])
