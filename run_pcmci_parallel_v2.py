@@ -10,7 +10,7 @@ from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
 import multiprocessing as mp
 import time
 from scipy import sparse
-from copy import deepcopy
+import os
 
 
 class PCMCI_Parallel:
@@ -234,7 +234,7 @@ class PCMCI_Parallel2:
             savedNamePvals, savedNameVals = out[-2:]
             allSparsePVal += sparse.load_npz(savedNamePvals)
             allSparseVal += sparse.load_npz(savedNameVals)
-            
+
         self.__clearMatrixStorage()
         valmatrix = self.fromHorizontal2DArrayTo3DArray(allSparseVal.toarray(), matrixShape)
         pmatrix = self.fromHorizontal2DArrayTo3DArray(allSparsePVal.toarray(), matrixShape)
@@ -259,7 +259,6 @@ if __name__ == '__main__':
     T = 500  # time series length
     data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
     T, N = data.shape
-    import os
 
     path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
     data = np.load(path).T
