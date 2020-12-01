@@ -135,9 +135,10 @@ if __name__ == '__main__':
     # results_pcmci_seq = seq_pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
     # p_matrix = results_pcmci_seq["p_matrix"]
     # np.save("test", p_matrix)
-    p_matrix = np.load("test.npy")
+    path = r"C:\Users\goubi\Desktop\Maîtrise\AvancementsProjet\500vars440timesteps0tauMin5tauMax.npy"
+    p_matrix = np.load(path)
     p = P_ValuesTensorVisualization(p_matrix)
     # p.sideBySideMatrixPValuesHist()
-    # p.allSlicesOnSameFig()
-    # p.allPValuesHistOnSameFig()
-    p.allPValuesHistOnSamePlot("gist_ncar")
+    p.allSlicesOnSameFig()
+    p.allPValuesHistOnSameFig()
+    #p.allPValuesHistOnSamePlot("gist_ncar")
