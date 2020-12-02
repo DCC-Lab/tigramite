@@ -127,8 +127,22 @@ class P_ValuesMatrixVisualization:
             raise ValueError("The array must be in 2D.")
 
 
+np.random.seed(42)  # Fix random seed
+
+
+def generateLinks(i):
+    if i % 4 == 0:
+        return [((i, -1), 0.7)]
+    elif i % 4 == 1:
+        return [((i, -1), 0.8), ((i - 1, -1), 0.8)]
+    elif i % 4 == 2:
+        return [((i, -1), 0.5), ((i - 1, -2), 0.5)]
+    else:
+        return [((i, -1), 0.67), ((i - 1, -1), 0.5), ((i - 2, -2), 0.8)]
+
+
 if __name__ == '__main__':
-    np.random.seed(42)  # Fix random seed
+
     links_coeffs_base = {0: [((0, -1), 0.7)],
                          1: [((1, -1), 0.8), ((0, -1), 0.8)],
                          2: [((2, -1), 0.5), ((1, -2), 0.5)],
@@ -137,7 +151,7 @@ if __name__ == '__main__':
     links_coeffs = {}
     nbVarTotal = 500
     for i in range(nbVarTotal):
-        links_coeffs[i] = links_coeffs_base[i % len(links_coeffs_base)]
+        links_coeffs[i] = generateLinks(i)
 
     T = 440  # time series length
     data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
@@ -146,10 +160,12 @@ if __name__ == '__main__':
     results = pcmci.start()
     allParents = pcmci.all_parents
     p_matrix = results["p_matrix"]
-
+    np.save("500varsPMatrix", p_matrix)
+    np.save("parents", allParents)
+    exit()
     p = P_ValuesTensorVisualization(p_matrix)
     # p.sideBySideMatrixPValuesHist()
     p.allSlicesOnSameFig()
     p.allPValuesHistOnSameFig()
-    #p.allPValuesHistOnSamePlot("gist_ncar")
-    print(allParents == true_parents_neighbors)
+    # p.allPValuesHistOnSamePlot("gist_ncar")
+    # print(allParents == true_parents_neighbors)
