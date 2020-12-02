@@ -128,17 +128,28 @@ class P_ValuesMatrixVisualization:
 
 
 if __name__ == '__main__':
-    # path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
-    # data = np.load(path).T
-    # data = data[:440, :10]
-    # seq_pcmci = PCMCI(pp.DataFrame(data), ParCorr())
-    # results_pcmci_seq = seq_pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
-    # p_matrix = results_pcmci_seq["p_matrix"]
-    # np.save("test", p_matrix)
-    path = r"C:\Users\goubi\Desktop\Maîtrise\AvancementsProjet\500vars440timesteps0tauMin5tauMax.npy"
-    p_matrix = np.load(path)
+    np.random.seed(42)  # Fix random seed
+    links_coeffs_base = {0: [((0, -1), 0.7)],
+                         1: [((1, -1), 0.8), ((0, -1), 0.8)],
+                         2: [((2, -1), 0.5), ((1, -2), 0.5)],
+                         3: [((3, -1), 0.67), ((2, -1), 0.5), ((1, -2), 0.8)]
+                         }
+    links_coeffs = {}
+    nbVarTotal = 500
+    for i in range(nbVarTotal):
+        links_coeffs[i] = links_coeffs_base[i % len(links_coeffs_base)]
+
+    T = 440  # time series length
+    data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
+    T, N = data.shape
+    pcmci = run_pcmci_parallel_v2.PCMCI_Parallel2(data, ParCorr, 0, 5, 0.01)
+    results = pcmci.start()
+    allParents = pcmci.all_parents
+    p_matrix = results["p_matrix"]
+
     p = P_ValuesTensorVisualization(p_matrix)
     # p.sideBySideMatrixPValuesHist()
     p.allSlicesOnSameFig()
     p.allPValuesHistOnSameFig()
     #p.allPValuesHistOnSamePlot("gist_ncar")
+    print(allParents == true_parents_neighbors)
