@@ -103,7 +103,7 @@ class PCMCI_Parallel:
 
 
 class PCMCI_Parallel2:
-    def __init__(self, data: np.ndarray, cond_ind_test, tau_min: int, tau_max: int, pc_alpha: float):
+    def __init__(self, data: np.ndarray, cond_ind_test, tau_min: int, tau_max: int, pc_alpha: float, **condTestKwargs):
         self.__nbVar = data.shape[-1]
         self.__data = data
         self.__cond_ind_test = cond_ind_test
@@ -113,7 +113,9 @@ class PCMCI_Parallel2:
         self.all_parents = {}
         self.val_min = {}
         self.pval_max = {}
-        pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
+        self.__condTestKwargs = condTestKwargs
+        pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()),
+                          cond_ind_test=self.__cond_ind_test(**self.__condTestKwargs))
         self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, True)
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
         self.allTuples = []
@@ -125,7 +127,8 @@ class PCMCI_Parallel2:
 
     def run_pc_stable_parallel_singleVariable(self, variables):
         out = []
-        pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
+        pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()),
+                          cond_ind_test=self.__cond_ind_test(**self.__condTestKwargs))
         for variable in variables:
             start = time.time()
             parents_of_var, otherStats = pcmci_var.run_pc_stable_single_var(variable, tau_min=self.__tau_min,
