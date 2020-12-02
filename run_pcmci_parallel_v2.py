@@ -134,7 +134,6 @@ class PCMCI_Parallel2:
                                                                             selected_links=self.__allSelectedLinks,
                                                                             otherReturn=False)
             print(f"PC algo done for var {variable}, time {time.time() - start} s")
-            print([variable, pcmci_var])
             out.append([variable, pcmci_var, parents_of_var, otherStats])
         return out
 
@@ -143,7 +142,6 @@ class PCMCI_Parallel2:
         currentAllTuples = []
         # stuff = stuff[0]
         for variable, pcmci_var in stuff:
-            print([variable, pcmci_var])
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             start = time.time()
@@ -174,7 +172,6 @@ class PCMCI_Parallel2:
 
         for elem in pc_output:
             for innerElem in elem:
-                print(innerElem[:2])
                 self.all_parents.update(innerElem[-2])
             mci_input.append([e[:2] for e in elem])
 
