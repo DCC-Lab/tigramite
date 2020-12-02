@@ -54,7 +54,7 @@ class P_ValuesTensorVisualization:
 
     def sideBySideMatrixPValuesHist(self, nbBins: int = None):
         if nbBins is None:
-            nbBins = self.__nbVars
+            nbBins = int(self.__nbVars ** .5)
         for index, s in self.splitSlices():
             fig, (matrix, hist) = plt.subplots(1, 2)
             fig.suptitle(r"P-Values for $\tau = {}$".format(index + self.__tau_min))
@@ -85,7 +85,7 @@ class P_ValuesTensorVisualization:
 
     def allPValuesHistOnSameFig(self, nbBins: int = None):
         if nbBins is None:
-            nbBins = self.__nbVars
+            nbBins = int(self.__nbVars ** .5)
         nbRows, nbCols = self.nbRows(self.__nbSlices)
         fig, axes = plt.subplots(nbRows, nbCols)
         fig.suptitle(f"P-Values histograms for {self.__nbVars} variables")
@@ -107,7 +107,7 @@ class P_ValuesTensorVisualization:
         values = np.linspace(0, 1, self.__nbSlices)
         colors = [cmap(value) for value in values]
         if nbBins is None:
-            nbBins = self.__nbVars
+            nbBins = int(self.__nbVars ** .5)
         fig, ax = plt.subplots()
         for i in range(self.__nbSlices):
             sns.histplot(self.__pvaluesRavel[i], ax=ax, alpha=.25, bins=nbBins,
@@ -155,17 +155,22 @@ if __name__ == '__main__':
 
     T = 440  # time series length
     data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
-    T, N = data.shape
-    pcmci = run_pcmci_parallel_v2.PCMCI_Parallel2(data, ParCorr, 0, 5, 0.01)
-    results = pcmci.start()
-    allParents = pcmci.all_parents
-    p_matrix = results["p_matrix"]
-    np.save("500varsPMatrix", p_matrix)
-    np.save("parents", allParents)
-    exit()
+    # T, N = data.shape
+    # pcmci = run_pcmci_parallel_v2.PCMCI_Parallel2(data, ParCorr, 0, 5, 0.01)
+    # results = pcmci.start()
+    # allParents = pcmci.all_parents
+    # p_matrix = results["p_matrix"]
+    # np.save("500varsPMatrix", p_matrix)
+    # np.save("parents", allParents)
+    # exit()
+    allParents = np.load(r"C:\Users\goubi\Desktop\Maîtrise\AvancementsProjet\parents.npy", allow_pickle=True).item()
+    print(allParents == true_parents_neighbors)
+    print(true_parents_neighbors)
+    for i in range(5):
+        print(allParents[i])
+    p_matrix = np.load(r"C:\Users\goubi\Desktop\Maîtrise\AvancementsProjet\500varsPmatrix.npy")
     p = P_ValuesTensorVisualization(p_matrix)
     # p.sideBySideMatrixPValuesHist()
-    p.allSlicesOnSameFig()
+    # p.allSlicesOnSameFig()
     p.allPValuesHistOnSameFig()
     # p.allPValuesHistOnSamePlot("gist_ncar")
-    # print(allParents == true_parents_neighbors)
