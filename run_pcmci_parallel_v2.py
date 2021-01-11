@@ -102,20 +102,19 @@ class PCMCI_Parallel2:
         mci_input = self.split(mci_input, nbWorkers)
 
         ### Shared memory preparation ###
-        temp_pmatrix = np.ones(self.__matricesShape)
-        temp_valmatrix = np.zeros(self.__matricesShape)
         sharedArraySize = np.prod(self.__matricesShape).item()
         pmatrixSharedArray = Array("d", sharedArraySize)
         valmatrixSharedArray = Array("d", sharedArraySize)
         pmatrix = np.frombuffer(pmatrixSharedArray.get_obj()).reshape(self.__matricesShape)
         valmatrix = np.frombuffer(valmatrixSharedArray.get_obj()).reshape(self.__matricesShape)
-        np.copyto(pmatrix, temp_pmatrix)
-        np.copyto(valmatrix, temp_valmatrix)
+        np.copyto(pmatrix, 1)
+        np.copyto(valmatrix, 0)
 
         start = time.time()
         initargs = (pmatrixSharedArray, valmatrixSharedArray)
         with mp.Pool(nbWorkers, initializer=self.initWorker, initargs=initargs) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
+
         print(f"MCIs done: {time.time() - start}")
         confMatrix = None
 
