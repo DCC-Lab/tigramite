@@ -8,9 +8,13 @@ from tigramite import data_processing as pp
 from tigramite.pcmci import PCMCI
 from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
 import multiprocessing as mp
+from multiprocessing import Array
 import time
 from scipy import sparse
 import os
+
+# Not a fan of global variables, but I don't see how I could do it otherwise. Class attribute doesn't seem to work.
+__sharedMemoryVariablesDict__ = {}
 
 
 class PCMCI_Parallel:
@@ -118,34 +122,16 @@ class PCMCI_Parallel2:
         self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, True)
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
         self.allTuples = []
-        self.__matrixStorage = os.path.join(os.getcwd(), "matrices")
-        os.mkdir(self.__matrixStorage)
+        self.__matricesShape = (self.__nbVar, self.__nbVar, self.__tau_max + 1)
 
     @staticmethod
     def split(container, count):
         container = tuple(container)
         return [container[i::count] for i in range(count)]
 
-    @staticmethod
-    def from3DArrayToHorizontal2DArray(array: np.ndarray):
-        """
-        Method used to take a 3D array of shape (N,M,T) and return it in a 2D array of shape (N, M*T).
-        :param array: Array to "flatten".
-        :return: A 2D horizontal representation of the original array.
-        """
-        return np.hstack(array.transpose((2, 0, 1)))
-
-    @staticmethod
-    def fromHorizontal2DArrayTo3DArray(array: np.ndarray, originalShape: tuple):
-        """
-        Method used to take a 2D array of shape (N, M*T) and return it in a 3D array of shape (N,M,T).
-        :param array: Array to return in 3D.
-        :return: 1 3D representation of the original array.
-        """
-        if len(originalShape) != 3:
-            raise ValueError("The original shape must be in 3D, so a tuple with 3 elements.")
-        N, M, T = originalShape
-        return np.dstack([array[:, i * M: i * M + M] for i in range(T)])
+    def initWorker(self, pvalsMat, statValMat):
+        __sharedMemoryVariablesDict__["pvals"] = pvalsMat
+        __sharedMemoryVariablesDict__["statVal"] = statValMat
 
     def run_pc_stable_parallel_singleVariable(self, variables):
         out = []
@@ -164,9 +150,10 @@ class PCMCI_Parallel2:
     def run_mci_parallel_singleVar(self, stuff):
         out = []
         currentAllTuples = []
-        processPValMatrix = np.ones((self.__nbVar, self.__nbVar, self.__tau_max + 1))
-        processValMatrix = np.zeros((self.__nbVar, self.__nbVar, self.__tau_max + 1))
-        pcmci_var = None
+        processPValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["pvals"].get_obj()).reshape(
+            self.__matricesShape)
+        processValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["statVal"].get_obj()).reshape(
+            self.__matricesShape)
         for variable, pcmci_var in stuff:
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
@@ -177,24 +164,8 @@ class PCMCI_Parallel2:
             processValMatrix[:, variable, :] = results_in_var["val_matrix"][:, variable, :]
             processPValMatrix[:, variable, :] = results_in_var["p_matrix"][:, variable, :]
             currentAllTuples.extend(pcmci_var.allTuples)
-            out.append([variable, pcmci_var])
-        processPValMatrix = processPValMatrix - 1  # We add 1 later in the algo. This is purely for sparsing purpose.
-        processPValMatrix2D = self.from3DArrayToHorizontal2DArray(processPValMatrix)
-        processValMatrix2D = self.from3DArrayToHorizontal2DArray(processValMatrix)
-        sparsePVal = sparse.csr_matrix(processPValMatrix2D)
-        sparseVal = sparse.csr_matrix(processValMatrix2D)
-        savedNamePvals = os.path.join(self.__matrixStorage, f"{os.getpid()}_pvals.npz")
-        savedNameVals = os.path.join(self.__matrixStorage, f"{os.getpid()}_vals.npz")
-        sparse.save_npz(savedNamePvals, sparsePVal)
-        sparse.save_npz(savedNameVals, sparseVal)
-        return out, currentAllTuples, savedNamePvals, savedNameVals
-
-    def __clearMatrixStorage(self):
-        if os.path.exists(self.__matrixStorage):
-            allFiles = os.listdir(self.__matrixStorage)
-            for f in allFiles:
-                os.remove(os.path.join(self.__matrixStorage, f))
-            os.rmdir(self.__matrixStorage)
+            out.append(variable)
+        return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
 
@@ -219,26 +190,27 @@ class PCMCI_Parallel2:
             mci_input.append([e[:2] for e in elem])
 
         mci_input = self.split(mci_input, nbWorkers)
+
+        ### Shared memory preparation ###
+        temp_pmatrix = np.ones(self.__matricesShape)
+        temp_valmatrix = np.zeros(self.__matricesShape)
+        sharedArraySize = np.prod(self.__matricesShape).item()
+        pmatrixSharedArray = Array("d", sharedArraySize)
+        valmatrixSharedArray = Array("d", sharedArraySize)
+        pmatrix = np.frombuffer(pmatrixSharedArray.get_obj()).reshape(self.__matricesShape)
+        valmatrix = np.frombuffer(valmatrixSharedArray.get_obj()).reshape(self.__matricesShape)
+        np.copyto(pmatrix, temp_pmatrix)
+        np.copyto(valmatrix, temp_valmatrix)
+
         start = time.time()
-        with mp.Pool(nbWorkers) as pool:
+        initargs = (pmatrixSharedArray, valmatrixSharedArray)
+        with mp.Pool(nbWorkers, initializer=self.initWorker, initargs=initargs) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
         print(f"MCIs done: {time.time() - start}")
-        matrixShape = (self.__nbVar, self.__nbVar, self.__tau_max + 1)
         confMatrix = None
-        allSparseVal = sparse.csr_matrix(
-            self.from3DArrayToHorizontal2DArray(np.zeros((self.__nbVar, self.__nbVar, self.__tau_max + 1))))
-        allSparsePVal = allSparseVal.copy()
 
         for out in output:
             self.allTuples.extend(out[1])
-            savedNamePvals, savedNameVals = out[-2:]
-            allSparsePVal += sparse.load_npz(savedNamePvals)
-            allSparseVal += sparse.load_npz(savedNameVals)
-
-        self.__clearMatrixStorage()
-        valmatrix = self.fromHorizontal2DArrayTo3DArray(allSparseVal.toarray(), matrixShape)
-        pmatrix = self.fromHorizontal2DArrayTo3DArray(allSparsePVal.toarray(), matrixShape)
-        pmatrix += 1  # Since we subtracted 1 earlier
 
         for pc_out in pc_output:
             for innerOut in pc_out:
