@@ -112,7 +112,7 @@ class Benchmark:
     def runPCMCI_par(self, data: np.ndarray, tau_max: int):
         dataframe = pp.DataFrame(data)
         cond_ind_test = ParCorr()
-        pcmci = run_pcmci_parallel_v2.PCMCI_Parallel2(data, ParCorr, 0, tau_max, 0.01)
+        pcmci = run_pcmci_parallel_v2.PCMCI_Parallel(data, ParCorr, 0, tau_max, 0.01)
         results = pcmci.start()
 
     def start(self, nbRuns: int, shapes: list, taus: list, dataShape: tuple = (400, 20), tau_max: int = 3):
