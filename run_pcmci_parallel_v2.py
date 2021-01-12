@@ -7,8 +7,7 @@ import numpy as np
 from tigramite import data_processing as pp
 from tigramite.pcmci import PCMCI
 from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
-import multiprocessing as mp
-from multiprocessing import Array, RawArray
+from multiprocessing import Array, RawArray, Manager, Pool, cpu_count
 from multiprocessing.shared_memory import SharedMemory
 from multiprocessing.managers import SharedMemoryManager
 import time
@@ -17,8 +16,6 @@ import os
 
 # Not a fan of global variables, but I don't see how I could do it otherwise. Class attribute doesn't seem to work.
 __sharedMemoryVariablesDict__ = {}
-
-lock = mp.Lock()
 
 
 class PCMCI_Parallel:
@@ -37,6 +34,7 @@ class PCMCI_Parallel:
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
         self.allTuples = []
         self.__matricesShape = (self.__nbVar, self.__nbVar, self.__tau_max + 1)
+        self.__sharedAllParents = Manager().dict()
 
     @staticmethod
     def split(container, count):
@@ -72,8 +70,8 @@ class PCMCI_Parallel:
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             start = time.time()
-            results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
-                                               selected_links=currentSelectedLinks)
+            results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max,
+                                               parents=self.__sharedAllParents, selected_links=currentSelectedLinks)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             processValMatrix[:, variable, :] = results_in_var["val_matrix"][:, variable, :]
             processPValMatrix[:, variable, :] = results_in_var["p_matrix"][:, variable, :]
@@ -84,15 +82,15 @@ class PCMCI_Parallel:
     def start(self, nbWorkers: int = None):
 
         if nbWorkers is None:
-            nbWorkers = mp.cpu_count()
-        if nbWorkers > mp.cpu_count():
-            nbWorkers = mp.cpu_count()
+            nbWorkers = cpu_count()
+        if nbWorkers > cpu_count():
+            nbWorkers = cpu_count()
 
         if nbWorkers > self.__nbVar:
             nbWorkers = self.__nbVar
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
         start = time.time()
-        with mp.Pool(nbWorkers) as pool:
+        with Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
         print(f"PCs done: {time.time() - start} s")
 
@@ -101,6 +99,7 @@ class PCMCI_Parallel:
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
+                self.__sharedAllParents.update(innerElem[-2])
             mci_input.append([e[:2] for e in elem])
 
         mci_input = self.split(mci_input, nbWorkers)
@@ -116,7 +115,7 @@ class PCMCI_Parallel:
 
         start = time.time()
         initargs = (pmatrixSharedArray, valmatrixSharedArray)
-        with mp.Pool(nbWorkers, initializer=self.initWorker, initargs=initargs) as pool:
+        with Pool(nbWorkers, initializer=self.initWorker, initargs=initargs) as pool:
             output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
 
         print(f"MCIs done: {time.time() - start}")
@@ -153,6 +152,7 @@ class PCMCI_Parallel2:
         self.__matricesShape = (self.__nbVar, self.__nbVar, self.__tau_max + 1)
         self.__sharedMemoryPValName = None
         self.__sharedMemoryValName = None
+        self.__sharedAllParents = Manager().dict()
 
     @staticmethod
     def split(container, count):
@@ -184,8 +184,8 @@ class PCMCI_Parallel2:
             currentSelectedLinks = self.__currentSelectedLinks.copy()
             currentSelectedLinks[variable] = self.__allSelectedLinks[variable]
             start = time.time()
-            results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max, parents=self.all_parents,
-                                               selected_links=currentSelectedLinks)
+            results_in_var = pcmci_var.run_mci(tau_min=self.__tau_min, tau_max=self.__tau_max,
+                                               parents=self.__sharedAllParents, selected_links=currentSelectedLinks)
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             processValMatrix[:, variable, :] = results_in_var["val_matrix"][:, variable, :]
             processPValMatrix[:, variable, :] = results_in_var["p_matrix"][:, variable, :]
@@ -198,15 +198,15 @@ class PCMCI_Parallel2:
     def start(self, nbWorkers: int = None):
 
         if nbWorkers is None:
-            nbWorkers = mp.cpu_count()
-        if nbWorkers > mp.cpu_count():
-            nbWorkers = mp.cpu_count()
+            nbWorkers = cpu_count()
+        if nbWorkers > cpu_count():
+            nbWorkers = cpu_count()
 
         if nbWorkers > self.__nbVar:
             nbWorkers = self.__nbVar
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
         start = time.time()
-        with mp.Pool(nbWorkers) as pool:
+        with Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
         print(f"PCs done: {time.time() - start} s")
 
@@ -215,6 +215,7 @@ class PCMCI_Parallel2:
         for elem in pc_output:
             for innerElem in elem:
                 self.all_parents.update(innerElem[-2])
+                self.__sharedAllParents.update(innerElem[-2])
             mci_input.append([e[:2] for e in elem])
 
         mci_input = self.split(mci_input, nbWorkers)
@@ -233,7 +234,7 @@ class PCMCI_Parallel2:
             np.copyto(valmatrix, temp_valmatrix)
 
             start = time.time()
-            with mp.Pool(nbWorkers) as pool:
+            with Pool(nbWorkers) as pool:
                 output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
             pmatrix = np.copy(pmatrix)
             valmatrix = np.copy(valmatrix)
