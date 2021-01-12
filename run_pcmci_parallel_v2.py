@@ -8,7 +8,7 @@ from tigramite import data_processing as pp
 from tigramite.pcmci import PCMCI
 from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
 import multiprocessing as mp
-from multiprocessing import Array
+from multiprocessing import Array, RawArray
 from multiprocessing.shared_memory import SharedMemory
 from multiprocessing.managers import SharedMemoryManager
 import time
@@ -64,9 +64,9 @@ class PCMCI_Parallel:
     def run_mci_parallel_singleVar(self, stuff):
         out = []
         currentAllTuples = []
-        processPValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["pvals"].get_obj()).reshape(
+        processPValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["pvals"]).reshape(
             self.__matricesShape)
-        processValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["statVal"].get_obj()).reshape(
+        processValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["statVal"]).reshape(
             self.__matricesShape)
         for variable, pcmci_var in stuff:
             currentSelectedLinks = self.__currentSelectedLinks.copy()
@@ -107,10 +107,10 @@ class PCMCI_Parallel:
 
         ### Shared memory preparation ###
         sharedArraySize = np.prod(self.__matricesShape).item()
-        pmatrixSharedArray = Array("d", sharedArraySize)
-        valmatrixSharedArray = Array("d", sharedArraySize)
-        pmatrix = np.frombuffer(pmatrixSharedArray.get_obj()).reshape(self.__matricesShape)
-        valmatrix = np.frombuffer(valmatrixSharedArray.get_obj()).reshape(self.__matricesShape)
+        pmatrixSharedArray = RawArray("d", sharedArraySize)
+        valmatrixSharedArray = RawArray("d", sharedArraySize)
+        pmatrix = np.frombuffer(pmatrixSharedArray).reshape(self.__matricesShape)
+        valmatrix = np.frombuffer(valmatrixSharedArray).reshape(self.__matricesShape)
         np.copyto(pmatrix, 1)
         np.copyto(valmatrix, 0)
 
