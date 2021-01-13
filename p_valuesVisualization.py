@@ -129,48 +129,29 @@ class P_ValuesMatrixVisualization:
 
 np.random.seed(42)  # Fix random seed
 
-
-def generateLinks(i):
-    if i % 4 == 0:
-        return [((i, -1), 0.7)]
-    elif i % 4 == 1:
-        return [((i, -1), 0.8), ((i - 1, -1), 0.8)]
-    elif i % 4 == 2:
-        return [((i, -1), 0.5), ((i - 1, -2), 0.5)]
-    else:
-        return [((i, -1), 0.67), ((i - 1, -1), 0.5), ((i - 2, -2), 0.8)]
-
-
 if __name__ == '__main__':
+    import networkx
+    from tigramite import plotting
+    import popnet as pn
 
-    links_coeffs_base = {0: [((0, -1), 0.7)],
-                         1: [((1, -1), 0.8), ((0, -1), 0.8)],
-                         2: [((2, -1), 0.5), ((1, -2), 0.5)],
-                         3: [((3, -1), 0.67), ((2, -1), 0.5), ((1, -2), 0.8)]
-                         }
-    links_coeffs = {}
-    nbVarTotal = 500
-    for i in range(nbVarTotal):
-        links_coeffs[i] = generateLinks(i)
+    N = 100
+    W = np.random.uniform(0, 0.2, (N, N))
+    print(W)
+    net = pn.build_network("1W", W)
+    pop = net.populations[0]
+    pop.alpha = 10
+    pop.beta = 5
+    pop.gamma = 2
+    net.reset_parameters(params=("alpha", "beta", "gamma"))
+    config = pn.make_config(net, final_time=440)
+    simulator = pn.get_simulator(config)
+    simulator.run()
+    calcium = simulator.calcium_output()
+    time = simulator.transition_times
+    simulator.close()
+    fig, ax = pn.init_standard_graph()
 
-    T = 440  # time series length
-    data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
-    # T, N = data.shape
-    # pcmci = run_pcmci_parallel_v2.PCMCI_Parallel2(data, ParCorr, 0, 5, 0.01)
-    # results = pcmci.start()
-    # allParents = pcmci.all_parents
-    # p_matrix = results["p_matrix"]
-    # np.save("500varsPMatrix", p_matrix)
-    # np.save("parents", allParents)
-    # exit()
-    allParents = np.load(r"C:\Users\goubi\Desktop\Maîtrise\AvancementsProjet\parents.npy", allow_pickle=True).item()
-    print(allParents == true_parents_neighbors)
-    print(true_parents_neighbors)
-    for i in range(5):
-        print(allParents[i])
-    p_matrix = np.load(r"C:\Users\goubi\Desktop\Maîtrise\AvancementsProjet\500varsPmatrix.npy")
-    p = P_ValuesTensorVisualization(p_matrix)
-    # p.sideBySideMatrixPValuesHist()
-    # p.allSlicesOnSameFig()
-    p.allPValuesHistOnSameFig()
-    # p.allPValuesHistOnSamePlot("gist_ncar")
+    for j in range(3):
+        ax.plot(time, calcium[j], label=f"Neuron {j}")
+    ax.legend()
+    plt.show()
