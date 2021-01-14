@@ -196,7 +196,7 @@ class PCMCI_Parallel2:
         return out, currentAllTuples
 
     def start(self, nbWorkers: int = None):
-
+        print("Initializing multiprocessing start...")
         if nbWorkers is None:
             nbWorkers = cpu_count()
         if nbWorkers > cpu_count():
@@ -206,6 +206,7 @@ class PCMCI_Parallel2:
             nbWorkers = self.__nbVar
         splittedJobs = self.split(range(self.__nbVar), nbWorkers)
         start = time.time()
+        print("Starting PC step...")
         with Pool(nbWorkers) as pool:
             pc_output = pool.map(self.run_pc_stable_parallel_singleVariable, splittedJobs)
         print(f"PCs done: {time.time() - start} s")
@@ -223,6 +224,7 @@ class PCMCI_Parallel2:
         ### Shared memory preparation ###
         temp_pmatrix = np.ones(self.__matricesShape)
         temp_valmatrix = np.zeros(self.__matricesShape)
+        print("Initializing memory share...")
         with SharedMemoryManager() as manager:
             sharedMemoryPmatrix = manager.SharedMemory(temp_pmatrix.nbytes)
             self.__sharedMemoryPValName = sharedMemoryPmatrix.name
@@ -234,6 +236,7 @@ class PCMCI_Parallel2:
             np.copyto(valmatrix, temp_valmatrix)
 
             start = time.time()
+            print("Starting MCI step...")
             with Pool(nbWorkers) as pool:
                 output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
             pmatrix = np.copy(pmatrix)
