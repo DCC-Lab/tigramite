@@ -5216,7 +5216,7 @@ class SpectrumOne(Spectrum, ResultOne):
         return f'$\\hat{{\\mathrm{{M}}}}_{{{XYZ}}}$'
 
 
-def build_network(ID, matrix):
+def build_network(ID, matrix, size:int):
     """Get a network from a weight matrix.
 
     Get a network with a weight matrix given by `matrix`.
@@ -5237,7 +5237,7 @@ def build_network(ID, matrix):
     N = matrix.shape[0]
     if matrix.shape != (N, N):
         raise ValueError('The given matrix should be square.')
-    net = default_network(ID, scale='micro')
+    net = default_network(ID, scale='micro', sizeIfMicro=size)
     net.c = N * np.mean(matrix)
     net.W = matrix
     return net
@@ -5270,7 +5270,7 @@ def default_config(ID, scale='macro'):
     return make_config(net, ID)
 
 
-def default_network(ID, scale='macro'):
+def default_network(ID, scale='macro', sizeIfMicro:int=100):
     """Define a network with default parameters.
     
     Define a new network with default parameters and a given ID.
@@ -5305,7 +5305,7 @@ def default_network(ID, scale='macro'):
         return Network(ID, pops)
     elif scale == 'micro':
         for pop in pops:
-            pop.size = 100
+            pop.size = sizeIfMicro
         return MicroNetwork(ID, pops)
     raise PopNetError(f'Unknown scale {scale} to create a network.')
 
