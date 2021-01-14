@@ -6,7 +6,7 @@ import numpy as np
 
 from tigramite import data_processing as pp
 from tigramite.pcmci import PCMCI
-from tigramite.independence_tests import ParCorr, GPDC, CMIknn, CMIsymb
+from tigramite.independence_tests import ParCorr
 from multiprocessing import Array, RawArray, Manager, Pool, cpu_count
 from multiprocessing.shared_memory import SharedMemory
 from multiprocessing.managers import SharedMemoryManager
@@ -19,7 +19,7 @@ __sharedMemoryVariablesDict__ = {}
 
 
 class PCMCI_Parallel:
-    def __init__(self, data: np.ndarray, cond_ind_test, tau_min: int, tau_max: int, pc_alpha: float):
+    def __init__(self, data: np.ndarray, cond_ind_test: callable, tau_min: int, tau_max: int, pc_alpha: float):
         self.__nbVar = data.shape[-1]
         self.__data = data
         self.__cond_ind_test = cond_ind_test
@@ -135,7 +135,7 @@ class PCMCI_Parallel:
 
 class PCMCI_Parallel2:
 
-    def __init__(self, data: np.ndarray, cond_ind_test, tau_min: int, tau_max: int, pc_alpha: float):
+    def __init__(self, data: np.ndarray, cond_ind_test: callable, tau_min: int, tau_max: int, pc_alpha: float):
         self.__nbVar = data.shape[-1]
         self.__data = data
         self.__cond_ind_test = cond_ind_test
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
     T, N = data.shape
 
-    path = os.path.join(os.getcwd(), "tigramite", "data", "timeSeries_ax1.npy")
+    path = os.path.join(os.getcwd(), "data", "timeSeries_ax1.npy")
     data = np.load(path).T
     data = data[:440, :10]
     seq_pcmci = PCMCI(pp.DataFrame(data), ParCorr())
