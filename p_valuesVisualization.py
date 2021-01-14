@@ -1,13 +1,9 @@
-import run_pcmci_parallel_v2
-from tigramite import data_processing as pp
-from tigramite.pcmci import PCMCI
-from tigramite.independence_tests import ParCorr
+from tigramite.pcmci_parallel import PCMCI_Parallel2
+from tigramite.independence_tests import CMIknn, ParCorr
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.cm as cm
-import pandas as pd
-import os
 
 __nbColsMax__ = 3
 
@@ -134,10 +130,10 @@ if __name__ == '__main__':
     from tigramite import plotting
     import popnet as pn
 
-    N = 100
-    W = np.random.uniform(0, 0.2, (N, N))
-    print(W)
-    net = pn.build_network("1W", W)
+    N = 20
+    W = np.random.uniform(0, 0.99, (N, N))
+    #print(W)
+    net = pn.build_network("1W", W, N)
     pop = net.populations[0]
     pop.alpha = 10
     pop.beta = 5
@@ -149,9 +145,14 @@ if __name__ == '__main__':
     calcium = simulator.calcium_output()
     time = simulator.transition_times
     simulator.close()
-    fig, ax = pn.init_standard_graph()
+    # fig, ax = pn.init_standard_graph()
+    #
+    # for j in range(3):
+    #     ax.plot(time, calcium[j], label=f"Neuron {j}")
+    # ax.legend()
+    # plt.show()
 
-    for j in range(3):
-        ax.plot(time, calcium[j], label=f"Neuron {j}")
-    ax.legend()
-    plt.show()
+    data = calcium.T
+    pcmci_par = PCMCI_Parallel2(data, CMIknn, 0, 5, 0.01)
+    results = pcmci_par.start()
+
