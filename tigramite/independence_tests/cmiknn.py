@@ -107,7 +107,7 @@ class CMIknn(CondIndTest):
                  shuffle_neighbors=5,
                  significance='shuffle_test',
                  transform='ranks',
-                 n_jobs=-1,
+                 n_jobs=1,
                  **kwargs):
         # Set the member variables
         self.knn = knn
