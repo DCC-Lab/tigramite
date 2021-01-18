@@ -32,7 +32,6 @@ class PCMCI_Parallel:
         pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
         self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, True)
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
-        self.allTuples = []
         self.__matricesShape = (self.__nbVar, self.__nbVar, self.__tau_max + 1)
         self.__sharedAllParents = Manager().dict()
 
@@ -61,7 +60,6 @@ class PCMCI_Parallel:
 
     def run_mci_parallel_singleVar(self, stuff):
         out = []
-        currentAllTuples = []
         processPValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["pvals"]).reshape(
             self.__matricesShape)
         processValMatrix = np.frombuffer(__sharedMemoryVariablesDict__["statVal"]).reshape(
@@ -75,9 +73,8 @@ class PCMCI_Parallel:
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             processValMatrix[:, variable, :] = results_in_var["val_matrix"][:, variable, :]
             processPValMatrix[:, variable, :] = results_in_var["p_matrix"][:, variable, :]
-            currentAllTuples.extend(pcmci_var.allTuples)
             out.append(variable)
-        return out, currentAllTuples
+        return out
 
     def start(self, nbWorkers: int = None):
 
@@ -121,9 +118,6 @@ class PCMCI_Parallel:
         print(f"MCIs done: {time.time() - start}")
         confMatrix = None
 
-        for out in output:
-            self.allTuples.extend(out[1])
-
         for pc_out in pc_output:
             for innerOut in pc_out:
                 index = innerOut[0]
@@ -148,11 +142,11 @@ class PCMCI_Parallel2:
         pcmci_var = PCMCI(dataframe=pp.DataFrame(self.__data.copy()), cond_ind_test=self.__cond_ind_test())
         self.__allSelectedLinks = pcmci_var._set_sel_links(None, self.__tau_min, self.__tau_max, True)
         self.__currentSelectedLinks = {key: [] for key in self.__allSelectedLinks.keys()}
-        self.allTuples = []
         self.__matricesShape = (self.__nbVar, self.__nbVar, self.__tau_max + 1)
         self.__sharedMemoryPValName = None
         self.__sharedMemoryValName = None
         self.__sharedAllParents = Manager().dict()
+        self.valmatrix, self.pmatrix = None, None
 
     @staticmethod
     def split(container, count):
@@ -175,7 +169,6 @@ class PCMCI_Parallel2:
 
     def run_mci_parallel_singleVar(self, stuff):
         out = []
-        currentAllTuples = []
         pvalShared = SharedMemory(self.__sharedMemoryPValName)
         valShared = SharedMemory(self.__sharedMemoryValName)
         processPValMatrix = np.ndarray(self.__matricesShape, dtype=float, buffer=pvalShared.buf)
@@ -189,11 +182,10 @@ class PCMCI_Parallel2:
             print(f"MCI algo done for var {variable}, time {time.time() - start} s")
             processValMatrix[:, variable, :] = results_in_var["val_matrix"][:, variable, :]
             processPValMatrix[:, variable, :] = results_in_var["p_matrix"][:, variable, :]
-            currentAllTuples.extend(pcmci_var.allTuples)
             out.append(variable)
         pvalShared.close()
         valShared.close()
-        return out, currentAllTuples
+        return out
 
     def start(self, nbWorkers: int = None):
         print("Initializing multiprocessing start...")
@@ -239,14 +231,11 @@ class PCMCI_Parallel2:
             print("Starting MCI step...")
             with Pool(nbWorkers) as pool:
                 output = pool.starmap(self.run_mci_parallel_singleVar, mci_input)
-            pmatrix = np.copy(pmatrix)
-            valmatrix = np.copy(valmatrix)
+            self.pmatrix = np.copy(pmatrix)
+            self.valmatrix = np.copy(valmatrix)
 
         print(f"MCIs done: {time.time() - start}")
         confMatrix = None
-
-        for out in output:
-            self.allTuples.extend(out[1])
 
         for pc_out in pc_output:
             for innerOut in pc_out:
@@ -254,20 +243,64 @@ class PCMCI_Parallel2:
                 self.val_min.update({index: innerOut[-1]["val_min"]})
                 self.pval_max.update({index: innerOut[-1]["pval_max"]})
 
-        return {"val_matrix": valmatrix, "p_matrix": pmatrix}
+        return {"val_matrix": self.valmatrix, "p_matrix": self.pmatrix}
+
+    def significantLinksFound(self, p_valueThreshold: float = 0.01, *args, **kwargs):
+        if self.pmatrix is None:
+            raise ValueError("Please run the PCMCI algorithm (with `start` method).")
+        return self.significantLinks(self.pmatrix, p_valueThreshold, *args, **kwargs)
+
+    def significantLinksComparison(self, trueAdjacencyMatrix: np.ndarray, p_valueThreshold: float = 0.01,
+                                   printReturnMessage: bool = True, *args, **kwargs):
+
+        currentLinks = self.significantLinksFound(p_valueThreshold, *args, **kwargs)
+        info = {}
+        trueLinks = self.significantLinks(trueAdjacencyMatrix, p_valueThreshold, *args, **kwargs)
+        truePositives = currentLinks.intersection(trueLinks)
+        falsePositives = currentLinks - trueLinks
+        falseNegatives = trueLinks - currentLinks
+        info["true positives"] = truePositives
+        info["false positives"] = falsePositives
+        info["false negatives"] = falseNegatives
+        if printReturnMessage:
+            msg = "Info: dictionary of 3 elements. The first is the number of true positives, i.e. " \
+                  "the number of links that are both true and found by the algorithm. The second is the number of " \
+                  "false positives, i.e. the number of links that are found by the algorithm, but not true. " \
+                  "The third is the number of false negatives, i.e. the number of links that are true, but not " \
+                  "found by the algorithm."
+            msg += "\nReturns also the number of true links and the number of links found."
+            print(msg)
+        return info, len(trueLinks), len(currentLinks)
+
+    @staticmethod
+    def significantLinks(array: np.ndarray, p_valueThreshold: float = 0.01, i_to_j: bool = True,
+                         showPrints: bool = True):
+        t_array = array
+        if not isinstance(t_array, np.ndarray):
+            if showPrints:
+                print("`array` is not a NumPy ndarray. Trying conversion.")
+            t_array = np.array(t_array)
+        if t_array.ndim >= 3 and showPrints:
+            print("We only keep the first two indices when working with array with more than 2 dimensions.")
+        indicesWhereInferior = np.where(t_array <= p_valueThreshold)
+        if i_to_j:
+            indicesWhereInferior = {(indicesWhereInferior[0][elem], indicesWhereInferior[1][elem]) for elem in
+                                    range(len(indicesWhereInferior[0]))}
+        else:
+            indicesWhereInferior = {(indicesWhereInferior[1][elem], indicesWhereInferior[0][elem]) for elem in
+                                    range(len(indicesWhereInferior[0]))}
+        return indicesWhereInferior
 
 
 if __name__ == '__main__':
-    np.random.seed(42)  # Fix random seed
-    links_coeffs = {0: [((0, -1), 0.7)],
-                    1: [((1, -1), 0.8), ((0, -1), 0.8)],
-                    2: [((2, -1), 0.5), ((1, -2), 0.5)],
-                    }
-
-    T = 500  # time series length
-    data, true_parents_neighbors = pp.var_process(links_coeffs, T=T)
-    T, N = data.shape
-
+    a = np.array([[1, 1e-6], [1, 1], [1, 1]])
+    b = np.array([[1, 1e-6], [1, 1], [1, 1]])
+    a = np.dstack([a, b])
+    s = PCMCI_Parallel2.significantLinks(a, 0.1, False, False)
+    a_links = {(1, 0)}
+    print(a_links == s)
+    print(s)
+    exit()
     path = os.path.join(os.getcwd(), "data", "timeSeries_ax1.npy")
     data = np.load(path).T
     data = data[:440, :10]
@@ -286,5 +319,4 @@ if __name__ == '__main__':
     # print(results_pcmci_par["val_matrix"])
     # print(results_pcmci_par2["val_matrix"])
     print(np.allclose(results_pcmci_par["p_matrix"], results_pcmci_par2["p_matrix"]))
-    print(sorted(pcmci_par.allTuples) == sorted(pcmci_par2.allTuples))
     print(pcmci_par.all_parents == pcmci_par2.all_parents)
