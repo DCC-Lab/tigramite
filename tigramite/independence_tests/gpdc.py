@@ -18,7 +18,7 @@ try:
     from tigramite import tigramite_cython_code
 except:
     pass
-    #print("Could not import packages for CMIknn and GPDC estimation")
+    print("Could not import packages for CMIknn and GPDC estimation")
 
 
 class GaussProcReg():
