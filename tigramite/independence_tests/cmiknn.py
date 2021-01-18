@@ -215,7 +215,6 @@ class CMIknn(CondIndTest):
         val : float
             Conditional mutual information estimate.
         """
-        print("Getting dependance measure")
         dim, T = array.shape
 
         if self.knn < 1:
@@ -261,7 +260,6 @@ class CMIknn(CondIndTest):
         pval : float
             p-value
         """
-        print("Shuffle test")
         dim, T = array.shape
 
         # Skip shuffle test if value is above threshold
