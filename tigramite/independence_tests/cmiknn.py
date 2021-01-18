@@ -110,6 +110,7 @@ class CMIknn(CondIndTest):
                  n_jobs=1,
                  **kwargs):
         # Set the member variables
+        print("Initializing CMI estimator")
         self.knn = knn
         self.shuffle_neighbors = shuffle_neighbors
         self.transform = transform
@@ -214,7 +215,7 @@ class CMIknn(CondIndTest):
         val : float
             Conditional mutual information estimate.
         """
-
+        print("Getting dependance measure")
         dim, T = array.shape
 
         if self.knn < 1:
@@ -260,6 +261,7 @@ class CMIknn(CondIndTest):
         pval : float
             p-value
         """
+        print("Shuffle test")
         dim, T = array.shape
 
         # Skip shuffle test if value is above threshold
