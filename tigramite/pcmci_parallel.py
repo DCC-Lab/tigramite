@@ -259,9 +259,9 @@ class PCMCI_Parallel2:
         truePositives = currentLinks.intersection(trueLinks)
         falsePositives = currentLinks - trueLinks
         falseNegatives = trueLinks - currentLinks
-        info["true positives"] = truePositives
-        info["false positives"] = falsePositives
-        info["false negatives"] = falseNegatives
+        info["true positives"] = (truePositives, len(truePositives))
+        info["false positives"] = (falsePositives, len(falsePositives))
+        info["false negatives"] = (falseNegatives, len(falseNegatives))
         if printReturnMessage:
             msg = "Info: dictionary of 3 elements. The first is the number of true positives, i.e. " \
                   "the number of links that are both true and found by the algorithm. The second is the number of " \
@@ -293,18 +293,16 @@ class PCMCI_Parallel2:
 
 
 if __name__ == '__main__':
-    a = np.array([[1, 1e-6], [1, 1], [1, 1]])
-    b = np.array([[1, 1e-6], [1, 1], [1, 1]])
-    a = np.dstack([a, b])
-    s = PCMCI_Parallel2.significantLinks(a, 0.1, False, False)
-    a_links = {(1, 0)}
-    print(a_links == s)
-    print(s)
-    exit()
+    from tigramite import plotting
     path = os.path.join(os.getcwd(), "data", "timeSeries_ax1.npy")
     data = np.load(path).T
     data = data[:440, :10]
-    seq_pcmci = PCMCI(pp.DataFrame(data), ParCorr())
+    df = pp.DataFrame(data)
+    plotting.plot_timeseries(df)
+    import matplotlib.pyplot as plt
+    plt.show()
+    exit()
+    seq_pcmci = PCMCI(df, ParCorr())
     # results_pcmci_seq = seq_pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
     pcmci_par = PCMCI_Parallel(data, ParCorr, 0, 5, 0.01)
     start = time.time()
