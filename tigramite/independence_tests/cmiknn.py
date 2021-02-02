@@ -95,6 +95,7 @@ class CMIknn(CondIndTest):
     **kwargs :
         Arguments passed on to parent class CondIndTest.
     """
+
     @property
     def measure(self):
         """
@@ -110,7 +111,6 @@ class CMIknn(CondIndTest):
                  n_jobs=1,
                  **kwargs):
         # Set the member variables
-        print("Initializing CMI estimator")
         self.knn = knn
         self.shuffle_neighbors = shuffle_neighbors
         self.transform = transform
@@ -178,25 +178,25 @@ class CMIknn(CondIndTest):
         elif self.transform == 'ranks':
             array = array.argsort(axis=1).argsort(axis=1).astype('float')
 
-
         # Use cKDTree to get distances eps to the k-th nearest neighbors for
         # every sample in joint space XYZ with maximum norm
         tree_xyz = spatial.cKDTree(array.T)
-        epsarray = tree_xyz.query(array.T, k=knn+1, p=np.inf,
-                                  eps=0., n_jobs=self.n_jobs)[0][:, knn].astype('float')
+        distances, _ = tree_xyz.query(array.T, k=knn + 1, p=np.inf,
+                                      eps=0., n_jobs=self.n_jobs)
+        epsarray = distances[:, knn].astype(float)
 
         # Prepare for fast cython access
         dim_x = int(np.where(xyz == 0)[0][-1] + 1)
         dim_y = int(np.where(xyz == 1)[0][-1] + 1 - dim_x)
 
         k_xz, k_yz, k_z = \
-                tigramite_cython_code._get_neighbors_within_eps_cython(array,
-                                                                       T,
-                                                                       dim_x,
-                                                                       dim_y,
-                                                                       epsarray,
-                                                                       knn,
-                                                                       dim)
+            tigramite_cython_code._get_neighbors_within_eps_cython(array,
+                                                                   T,
+                                                                   dim_x,
+                                                                   dim_y,
+                                                                   epsarray,
+                                                                   knn,
+                                                                   dim)
         return k_xz, k_yz, k_z
 
     def get_dependence_measure(self, array, xyz):
@@ -218,7 +218,7 @@ class CMIknn(CondIndTest):
         dim, T = array.shape
 
         if self.knn < 1:
-            knn_here = max(1, int(self.knn*T))
+            knn_here = max(1, int(self.knn * T))
         else:
             knn_here = max(1, int(self.knn))
 
@@ -231,7 +231,6 @@ class CMIknn(CondIndTest):
                                            special.digamma(k_z)).mean()
 
         return val
-
 
     def get_shuffle_significance(self, array, xyz, value,
                                  return_null_dist=False):
@@ -277,7 +276,7 @@ class CMIknn(CondIndTest):
             if self.verbosity > 2:
                 print("            nearest-neighbor shuffle significance "
                       "test with n = %d and %d surrogates" % (
-                      self.shuffle_neighbors, self.sig_samples))
+                          self.shuffle_neighbors, self.sig_samples))
 
             # Get nearest neighbors around each sample point in Z
             z_array = np.fastCopyAndTranspose(array[z_indices, :])
@@ -312,11 +311,11 @@ class CMIknn(CondIndTest):
 
         else:
             null_dist = \
-                    self._get_shuffle_dist(array, xyz,
-                                           self.get_dependence_measure,
-                                           sig_samples=self.sig_samples,
-                                           sig_blocklength=self.sig_blocklength,
-                                           verbosity=self.verbosity)
+                self._get_shuffle_dist(array, xyz,
+                                       self.get_dependence_measure,
+                                       sig_samples=self.sig_samples,
+                                       sig_blocklength=self.sig_blocklength,
+                                       verbosity=self.verbosity)
 
         # Sort
         null_dist.sort()
@@ -325,4 +324,3 @@ class CMIknn(CondIndTest):
         if return_null_dist:
             return pval, null_dist
         return pval
-
