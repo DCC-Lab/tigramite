@@ -158,7 +158,6 @@ class PCMCI():
 
         # Store the shape of the data in the T and N variables
         self.T, self.N = self.dataframe.values.shape
-        print(self.N)
 
     def _set_sel_links(self, selected_links, tau_min, tau_max,
                        remove_contemp=False):
