@@ -245,52 +245,6 @@ class PCMCI_Parallel2:
 
         return {"val_matrix": self.valmatrix, "p_matrix": self.pmatrix}
 
-    def significantLinksFound(self, p_valueThreshold: float = 0.01, *args, **kwargs):
-        if self.pmatrix is None:
-            raise ValueError("Please run the PCMCI algorithm (with `start` method).")
-        return self.significantLinks(self.pmatrix, p_valueThreshold, *args, **kwargs)
-
-    def significantLinksComparison(self, trueAdjacencyMatrix: np.ndarray, p_valueThreshold: float = 0.01,
-                                   printReturnMessage: bool = True, *args, **kwargs):
-
-        currentLinks = self.significantLinksFound(p_valueThreshold, *args, **kwargs)
-        info = {}
-        trueLinks = self.significantLinks(trueAdjacencyMatrix, p_valueThreshold, *args, **kwargs)
-        truePositives = currentLinks.intersection(trueLinks)
-        falsePositives = currentLinks - trueLinks
-        falseNegatives = trueLinks - currentLinks
-        info["true positives"] = (truePositives, len(truePositives))
-        info["false positives"] = (falsePositives, len(falsePositives))
-        info["false negatives"] = (falseNegatives, len(falseNegatives))
-        if printReturnMessage:
-            msg = "Info: dictionary of 3 elements. The first is the number of true positives, i.e. " \
-                  "the number of links that are both true and found by the algorithm. The second is the number of " \
-                  "false positives, i.e. the number of links that are found by the algorithm, but not true. " \
-                  "The third is the number of false negatives, i.e. the number of links that are true, but not " \
-                  "found by the algorithm."
-            msg += "\nReturns also the number of true links and the number of links found."
-            print(msg)
-        return info, len(trueLinks), len(currentLinks)
-
-    @staticmethod
-    def significantLinks(array: np.ndarray, p_valueThreshold: float = 0.01, i_to_j: bool = True,
-                         showPrints: bool = True):
-        t_array = array
-        if not isinstance(t_array, np.ndarray):
-            if showPrints:
-                print("`array` is not a NumPy ndarray. Trying conversion.")
-            t_array = np.array(t_array)
-        if t_array.ndim >= 3 and showPrints:
-            print("We only keep the first two indices when working with array with more than 2 dimensions.")
-        indicesWhereInferior = np.where(t_array <= p_valueThreshold)
-        if i_to_j:
-            indicesWhereInferior = {(indicesWhereInferior[0][elem], indicesWhereInferior[1][elem]) for elem in
-                                    range(len(indicesWhereInferior[0]))}
-        else:
-            indicesWhereInferior = {(indicesWhereInferior[1][elem], indicesWhereInferior[0][elem]) for elem in
-                                    range(len(indicesWhereInferior[0]))}
-        return indicesWhereInferior
-
 
 if __name__ == '__main__':
     from tigramite import plotting
@@ -298,10 +252,6 @@ if __name__ == '__main__':
     data = np.load(path).T
     data = data[:440, :10]
     df = pp.DataFrame(data)
-    plotting.plot_timeseries(df)
-    import matplotlib.pyplot as plt
-    plt.show()
-    exit()
     seq_pcmci = PCMCI(df, ParCorr())
     # results_pcmci_seq = seq_pcmci.run_pcmci(tau_min=0, tau_max=5, pc_alpha=0.01)
     pcmci_par = PCMCI_Parallel(data, ParCorr, 0, 5, 0.01)
