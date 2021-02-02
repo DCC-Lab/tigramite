@@ -11,6 +11,7 @@ import sys
 
 from .independence_tests_base import CondIndTest
 
+
 class ParCorr(CondIndTest):
     r"""Partial correlation test.
 
@@ -39,6 +40,7 @@ class ParCorr(CondIndTest):
     **kwargs :
         Arguments passed on to Parent class CondIndTest.
     """
+
     # documentation
     @property
     def measure(self):
@@ -130,7 +132,6 @@ class ParCorr(CondIndTest):
         val : float
             Partial correlation coefficient.
         """
-
         x_vals = self._get_single_residuals(array, target_var=0)
         y_vals = self._get_single_residuals(array, target_var=1)
         val, _ = stats.pearsonr(x_vals, y_vals)
@@ -211,7 +212,7 @@ class ParCorr(CondIndTest):
         elif abs(abs(value) - 1.0) <= sys.float_info.min:
             pval = 0.0
         else:
-            trafo_val = value * np.sqrt(deg_f/(1. - value*value))
+            trafo_val = value * np.sqrt(deg_f / (1. - value * value))
             # Two sided significance level
             pval = stats.t.sf(np.abs(trafo_val), deg_f) * 2
 
@@ -241,15 +242,14 @@ class ParCorr(CondIndTest):
         # Confidence interval is two-sided
         c_int = (1. - (1. - conf_lev) / 2.)
 
-        value_tdist = value * np.sqrt(df) / np.sqrt(1. - value**2)
+        value_tdist = value * np.sqrt(df) / np.sqrt(1. - value ** 2)
         conf_lower = (stats.t.ppf(q=1. - c_int, df=df, loc=value_tdist)
                       / np.sqrt(df + stats.t.ppf(q=1. - c_int, df=df,
-                                                 loc=value_tdist)**2))
+                                                 loc=value_tdist) ** 2))
         conf_upper = (stats.t.ppf(q=c_int, df=df, loc=value_tdist)
                       / np.sqrt(df + stats.t.ppf(q=c_int, df=df,
-                                                 loc=value_tdist)**2))
+                                                 loc=value_tdist) ** 2))
         return (conf_lower, conf_upper)
-
 
     def get_model_selection_criterion(self, j, parents, tau_max=0):
         """Returns Akaike's Information criterion modulo constants.
@@ -277,7 +277,7 @@ class ParCorr(CondIndTest):
         """
 
         Y = [(j, 0)]
-        X = [(j, 0)]   # dummy variable here
+        X = [(j, 0)]  # dummy variable here
         Z = parents
         array, xyz = self.dataframe.construct_array(X=X, Y=Y, Z=Z,
                                                     tau_max=tau_max,
@@ -290,7 +290,7 @@ class ParCorr(CondIndTest):
 
         y = self._get_single_residuals(array, target_var=1, return_means=False)
         # Get RSS
-        rss = (y**2).sum()
+        rss = (y ** 2).sum()
         # Number of parameters
         p = dim - 1
         # Get AIC
