@@ -7,6 +7,7 @@
 from __future__ import print_function
 from scipy import special, stats, spatial
 import numpy as np
+from sklearn.neighbors import KDTree
 
 from .independence_tests_base import CondIndTest
 
