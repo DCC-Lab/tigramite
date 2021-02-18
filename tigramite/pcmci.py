@@ -158,6 +158,8 @@ class PCMCI():
 
         # Store the shape of the data in the T and N variables
         self.T, self.N = self.dataframe.values.shape
+        self.temp_dict = {}
+        self.selected_links = {}
 
     def _set_sel_links(self, selected_links, tau_min, tau_max,
                        remove_contemp=False):
@@ -443,15 +445,16 @@ class PCMCI():
         """
         # Initialize the dictionaries for the pval_max, val_min parents_values
         # results
+        self.temp_dict[j] = {}
         pval_max = dict()
         val_min = dict()
         parents_values = dict()
+        self.selected_links[j] = deepcopy(selected_links)
         # Initialize the parents values from the selected links, copying to
         # ensure this initial argument is unchanged.
         parents = deepcopy(selected_links)
         val_min = {(p[0], p[1]): None for p in parents}
         pval_max = {(p[0], p[1]): None for p in parents}
-
         # Define a nested defaultdict of depth 4 to save all information about
         # iterations
         iterations = _create_nested_dictionary(4)
@@ -470,11 +473,12 @@ class PCMCI():
             # Check if the algorithm has converged
             if len(parents) - 1 < conds_dim:
                 converged = True
+                print(f"{j} Converged {conds_dim}")
                 break
             # Print information about
             if self.verbosity > 1:
                 print("\nTesting condition sets of dimension %d:" % conds_dim)
-
+            self.temp_dict[j][conds_dim] = {}
             # Iterate through all possible pairs (that have not converged yet)
             for index_parent, parent in enumerate(parents):
                 # Print info about this link
@@ -489,12 +493,14 @@ class PCMCI():
                     if comb_index >= max_combinations:
                         break
                     # Perform independence test
+
                     val, pval = self.cond_ind_test.run_test(X=[parent],
                                                             Y=[(j, 0)],
-                                                            Z=Z,
+                                                            Z=deepcopy(Z),
                                                             tau_max=tau_max,
                                                             # verbosity=self.verbosity
                                                             )
+                    self.temp_dict[j][conds_dim][index_parent] = {"parent": parent, "Z": Z, "pval": pval}
                     # Print some information if needed
                     if self.verbosity > 1:
                         self._print_cond_info(Z, comb_index, pval, val)
@@ -515,10 +521,12 @@ class PCMCI():
                         a_iter[comb_index]['val'] = val
                         a_iter[comb_index]['pval'] = pval
                     # Delete link later and break while-loop if non-significant
-                    if pval > pc_alpha:
+                    if pval >= pc_alpha:
                         nonsig_parents.append((j, parent))
                         nonsig = True
                         break
+                    else:
+                        print(f"{j}, {pval} < {pc_alpha}, {parent}")
 
                 # Print the results if needed
                 if self.verbosity > 1:
@@ -531,6 +539,7 @@ class PCMCI():
             # Return the parents list sorted by the test metric so that the
             # updated parents list is given to the next cond_dim loop
             parents = self._sort_parents(parents_values)
+            print(f"{j}, parents: {parents}")
             # Print information about the change in possible parents
             if self.verbosity > 1:
                 print("\nUpdating parents:")
@@ -690,6 +699,7 @@ class PCMCI():
                                              pc_alpha=_int_pc_alpha[0],
                                              max_conds_dim=max_conds_dim,
                                              max_combinations=max_combinations)
+
         if otherReturn:
             return results
         return {selectedVar: results["parents"]}, results
